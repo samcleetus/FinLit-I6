@@ -1,0 +1,28 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+/ios/
+/web/
+
+# Godot build/import cache
+*.import
+import/
+
+# Godot export templates
+export_templates/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS specific
+Thumbs.db
+.DS_Store
+*.pdb

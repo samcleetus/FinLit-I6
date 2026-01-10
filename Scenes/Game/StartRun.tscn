@@ -1,5 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://bd1avrq7ogqn7"]
+[gd_scene load_steps=4 format=3 uid="uid://bd1avrq7ogqn7"]
 
+[ext_resource type="Script" path="res://Scripts/UI/StartRun.gd" id="1_f6pcr"]
 [ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_mhe3e"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_paj35"]
@@ -11,6 +12,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_f6pcr")
 
 [node name="Background" type="TextureRect" parent="."]
 layout_mode = 1

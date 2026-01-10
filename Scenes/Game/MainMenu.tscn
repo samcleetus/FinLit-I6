@@ -1,6 +1,7 @@
-[gd_scene load_steps=7 format=3 uid="uid://ds3i0buprpqvs"]
+[gd_scene load_steps=8 format=3 uid="uid://ds3i0buprpqvs"]
 
 [ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_afu0a"]
+[ext_resource type="Script" path="res://Scripts/UI/MainMenu.gd" id="1_mwn2r"]
 
 [sub_resource type="CanvasTexture" id="CanvasTexture_ni22l"]
 
@@ -19,6 +20,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_mwn2r")
 
 [node name="Background" type="TextureRect" parent="."]
 layout_mode = 1

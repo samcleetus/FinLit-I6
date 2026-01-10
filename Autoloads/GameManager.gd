@@ -34,16 +34,22 @@ func get_settings() -> AppSettings:
 	return _settings
 
 
-func set_time_horizon(value: float) -> void:
+func set_time_horizon(value) -> void:
 	print("GameManager: set_time_horizon called with %s" % value)
 	if _settings:
 		_settings.time_horizon = value
+		print("GameManager: time_horizon updated to %s" % _settings.time_horizon)
+	else:
+		print("GameManager: cannot set time_horizon, settings not initialized")
 
 
-func set_difficulty(value: String) -> void:
+func set_difficulty(value) -> void:
 	print("GameManager: set_difficulty called with %s" % value)
 	if _settings:
 		_settings.difficulty = value
+		print("GameManager: difficulty updated to %s" % _settings.difficulty)
+	else:
+		print("GameManager: cannot set difficulty, settings not initialized")
 
 
 func start_new_run() -> bool:

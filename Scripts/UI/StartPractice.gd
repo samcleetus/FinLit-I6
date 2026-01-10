@@ -1,11 +1,18 @@
-extends Node
+extends Control
 
 
-# Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	pass # Replace with function body.
+	print("StartPractice: _ready called")
+	_connect_back_button()
 
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	pass
+func _connect_back_button() -> void:
+	var node := get_node_or_null("BackButton")
+	if node == null:
+		print("StartPractice: Missing BackButton at path BackButton")
+		return
+	var button := node as Button
+	if button == null:
+		print("StartPractice: Node at BackButton is not a Button")
+		return
+	button.pressed.connect(func() -> void: GameManager.go_to_main_menu())

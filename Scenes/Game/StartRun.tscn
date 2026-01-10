@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3 uid="uid://bd1avrq7ogqn7"]
+[gd_scene load_steps=5 format=3 uid="uid://bd1avrq7ogqn7"]
 
 [ext_resource type="Script" path="res://Scripts/UI/StartRun.gd" id="1_f6pcr"]
 [ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_mhe3e"]
+[ext_resource type="PackedScene" uid="uid://bhmdobeuhceae" path="res://Scenes/UI/AssetCard.tscn" id="3_gwf7r"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_paj35"]
 
@@ -28,10 +29,9 @@ anchors_preset = -1
 anchor_left = 0.03
 anchor_top = 0.06
 anchor_right = 0.97
-anchor_bottom = 0.06
+anchor_bottom = 0.35
 offset_right = 40.0
 offset_bottom = 40.0
-alignment = 1
 
 [node name="BackButton" type="Button" parent="TitleVBox"]
 layout_mode = 2
@@ -47,16 +47,46 @@ text = "Choose your Assets"
 horizontal_alignment = 1
 
 [node name="SubtitleLabel" type="Label" parent="TitleVBox"]
+visible = false
 layout_mode = 2
 theme_override_font_sizes/font_size = 50
 text = "Pick 4 Assets"
 horizontal_alignment = 1
 
+[node name="AssetVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.05
+anchor_top = 0.2
+anchor_right = 0.95
+anchor_bottom = 0.38
+grow_horizontal = 2
+theme_override_constants/separation = 40
+alignment = 1
+
+[node name="SelectedAssetContainer" type="HBoxContainer" parent="AssetVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="AssetCard1" parent="AssetVBox/SelectedAssetContainer" instance=ExtResource("3_gwf7r")]
+layout_mode = 2
+
+[node name="AssetCard2" parent="AssetVBox/SelectedAssetContainer" instance=ExtResource("3_gwf7r")]
+layout_mode = 2
+
+[node name="AssetCard3" parent="AssetVBox/SelectedAssetContainer" instance=ExtResource("3_gwf7r")]
+layout_mode = 2
+
+[node name="AssetCard4" parent="AssetVBox/SelectedAssetContainer" instance=ExtResource("3_gwf7r")]
+layout_mode = 2
+
 [node name="AssetScroll" type="ScrollContainer" parent="."]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.05
-anchor_top = 0.22
+anchor_top = 0.41
 anchor_right = 0.95
 anchor_bottom = 0.83
 grow_horizontal = 2

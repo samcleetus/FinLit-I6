@@ -1,11 +1,8 @@
-extends Node
+extends Control
 
 
-# Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	pass # Replace with function body.
-
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	pass
+	print("Boot: _ready called")
+	if not GameManager.should_show_boot():
+		print("Boot: should_show_boot is false, routing to Main Menu")
+		GameManager.go_to_main_menu()

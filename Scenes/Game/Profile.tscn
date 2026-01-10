@@ -1,0 +1,145 @@
+[gd_scene load_steps=6 format=3 uid="uid://l4p1oit7vlpt"]
+
+[ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_rp6d8"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_kipis"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_numfs"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_v7jst"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_netxv"]
+
+[node name="Profile" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.03
+anchor_top = 0.06
+anchor_right = 0.97
+anchor_bottom = 0.06
+offset_right = 40.0
+offset_bottom = 224.0
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="TitleVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 100
+text = "Profile"
+horizontal_alignment = 1
+
+[node name="ContentVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.05
+anchor_top = 0.17
+anchor_right = 0.95
+anchor_bottom = 0.8
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 50
+
+[node name="PlayerImage" type="TextureRect" parent="ContentVBox"]
+custom_minimum_size = Vector2(400, 400)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("1_rp6d8")
+stretch_mode = 4
+
+[node name="StatRow1" type="HBoxContainer" parent="ContentVBox"]
+layout_mode = 2
+theme_override_constants/separation = 50
+alignment = 1
+
+[node name="NameLabel" type="Label" parent="ContentVBox/StatRow1"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 60
+text = "Stat 1:"
+
+[node name="StatRow2" type="HBoxContainer" parent="ContentVBox"]
+layout_mode = 2
+theme_override_constants/separation = 50
+alignment = 1
+
+[node name="NameLabel" type="Label" parent="ContentVBox/StatRow2"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 60
+text = "Stat 2:"
+
+[node name="StatRow3" type="HBoxContainer" parent="ContentVBox"]
+layout_mode = 2
+theme_override_constants/separation = 50
+alignment = 1
+
+[node name="NameLabel" type="Label" parent="ContentVBox/StatRow3"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 60
+text = "Stat 3:"
+
+[node name="ButtonsRow" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.05
+anchor_top = 0.85
+anchor_right = 0.95
+anchor_bottom = 0.97
+offset_top = -8.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 40
+alignment = 1
+
+[node name="PracticeButton" type="Button" parent="ButtonsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/focus = SubResource("StyleBoxEmpty_kipis")
+icon = ExtResource("1_rp6d8")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="MainMenuButton" type="Button" parent="ButtonsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/focus = SubResource("StyleBoxEmpty_numfs")
+icon = ExtResource("1_rp6d8")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="ProfileButton" type="Button" parent="ButtonsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/focus = SubResource("StyleBoxEmpty_v7jst")
+disabled = true
+icon = ExtResource("1_rp6d8")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="SettingsButton" type="Button" parent="ButtonsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/focus = SubResource("StyleBoxEmpty_netxv")
+icon = ExtResource("1_rp6d8")
+flat = true
+icon_alignment = 1
+expand_icon = true

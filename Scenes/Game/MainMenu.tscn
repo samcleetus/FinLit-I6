@@ -1,0 +1,125 @@
+[gd_scene load_steps=7 format=3 uid="uid://ds3i0buprpqvs"]
+
+[ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_afu0a"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_ni22l"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_7glq7"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_par4t"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ni302"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_g3vjj"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.03
+anchor_top = 0.06
+anchor_right = 0.97
+anchor_bottom = 0.06
+offset_bottom = 364.0
+grow_horizontal = 2
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="TitleVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 100
+text = "Main Menu"
+horizontal_alignment = 1
+
+[node name="CenterContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 50
+alignment = 1
+
+[node name="Container" type="TextureRect" parent="CenterContainer"]
+custom_minimum_size = Vector2(800, 1000)
+layout_mode = 2
+size_flags_vertical = 3
+texture = SubResource("CanvasTexture_ni22l")
+
+[node name="PlayButton" type="Button" parent="CenterContainer"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+theme_override_styles/focus = SubResource("StyleBoxEmpty_7glq7")
+text = "PLAY"
+
+[node name="ButtonsRow" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.05
+anchor_top = 0.85
+anchor_right = 0.95
+anchor_bottom = 0.97
+offset_top = -8.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 40
+alignment = 1
+
+[node name="PracticeButton" type="Button" parent="ButtonsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/focus = SubResource("StyleBoxEmpty_par4t")
+icon = ExtResource("1_afu0a")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="MainMenuButton" type="Button" parent="ButtonsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/focus = SubResource("StyleBoxEmpty_ni302")
+disabled = true
+icon = ExtResource("1_afu0a")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="ProfileButton" type="Button" parent="ButtonsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/focus = SubResource("StyleBoxEmpty_g3vjj")
+icon = ExtResource("1_afu0a")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="SettingsButton" type="Button" parent="ButtonsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/focus = SubResource("StyleBoxEmpty_g3vjj")
+icon = ExtResource("1_afu0a")
+flat = true
+icon_alignment = 1
+expand_icon = true

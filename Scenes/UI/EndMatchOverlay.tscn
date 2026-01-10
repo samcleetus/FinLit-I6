@@ -1,0 +1,102 @@
+[gd_scene load_steps=4 format=3 uid="uid://bpgcr756l6cp8"]
+
+[ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_r4ip7"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_llbyk"]
+bg_color = Color(4.33177e-07, 0.244481, 0.283318, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_v4x1d"]
+
+[node name="EndMatchOverlay" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dimmer" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.27451)
+
+[node name="TitleVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.03
+anchor_top = 0.06
+anchor_right = 0.97
+anchor_bottom = 0.06
+offset_bottom = 364.0
+grow_horizontal = 2
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="TitleVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 100
+text = "Match Complete!"
+horizontal_alignment = 1
+
+[node name="Card" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.3
+anchor_top = 0.3
+anchor_right = 0.7
+anchor_bottom = 0.5
+offset_left = -171.0
+offset_top = -134.5
+offset_right = 171.0
+offset_bottom = 134.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_llbyk")
+
+[node name="StatsVBox" type="VBoxContainer" parent="Card"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 50
+alignment = 1
+
+[node name="StatRow1" type="HBoxContainer" parent="Card/StatsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 50
+alignment = 1
+
+[node name="NameLabel" type="Label" parent="Card/StatsVBox/StatRow1"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 60
+text = "Stat 1:"
+
+[node name="StatRow2" type="HBoxContainer" parent="Card/StatsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 50
+alignment = 1
+
+[node name="NameLabel" type="Label" parent="Card/StatsVBox/StatRow2"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 60
+text = "Stat 2:"
+
+[node name="ButtonsRow" type="HBoxContainer" parent="Card/StatsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 70
+alignment = 1
+
+[node name="MainMenuButton" type="Button" parent="Card/StatsVBox/ButtonsRow"]
+layout_mode = 2
+theme_override_styles/focus = SubResource("StyleBoxEmpty_v4x1d")
+icon = ExtResource("1_r4ip7")
+flat = true
+
+[node name="ReplayButton" type="Button" parent="Card/StatsVBox/ButtonsRow"]
+layout_mode = 2
+theme_override_styles/focus = SubResource("StyleBoxEmpty_v4x1d")
+icon = ExtResource("1_r4ip7")
+flat = true

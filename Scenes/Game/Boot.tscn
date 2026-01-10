@@ -1,0 +1,127 @@
+[gd_scene load_steps=4 format=3 uid="uid://ckgd14v4c8j6u"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_0gmtf"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_pbvmi"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_nlxqw"]
+
+[node name="Boot" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.03
+anchor_top = 0.06
+anchor_right = 0.97
+anchor_bottom = 0.06
+offset_right = 40.0
+offset_bottom = 40.0
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="TitleVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 100
+text = "Welcome to FinLit"
+horizontal_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="TitleVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 60
+text = "Subtitle"
+horizontal_alignment = 1
+
+[node name="VariableContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.2
+anchor_top = 0.35
+anchor_right = 0.8
+anchor_bottom = 0.35
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="HorizonRow" type="HBoxContainer" parent="VariableContainer"]
+layout_mode = 2
+theme_override_constants/separation = 50
+alignment = 1
+
+[node name="NameLabel" type="Label" parent="VariableContainer/HorizonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 60
+text = "Horizon:"
+
+[node name="OptionButton" type="OptionButton" parent="VariableContainer/HorizonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 60
+theme_override_styles/focus = SubResource("StyleBoxEmpty_0gmtf")
+item_count = 3
+popup/item_0/text = "10"
+popup/item_0/id = 1
+popup/item_1/text = "20"
+popup/item_1/id = 2
+popup/item_2/text = "30"
+popup/item_2/id = 3
+
+[node name="DifficultyRow" type="HBoxContainer" parent="VariableContainer"]
+layout_mode = 2
+theme_override_constants/separation = 50
+alignment = 1
+
+[node name="NameLabel" type="Label" parent="VariableContainer/DifficultyRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 60
+text = "Difficulty:"
+
+[node name="OptionButton" type="OptionButton" parent="VariableContainer/DifficultyRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 60
+theme_override_styles/focus = SubResource("StyleBoxEmpty_pbvmi")
+item_count = 3
+popup/item_0/text = "10"
+popup/item_0/id = 1
+popup/item_1/text = "20"
+popup/item_1/id = 2
+popup/item_2/text = "30"
+popup/item_2/id = 3
+
+[node name="StartButton" type="Button" parent="."]
+custom_minimum_size = Vector2(400, 150)
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.6
+anchor_right = 0.5
+anchor_bottom = 0.6
+offset_left = -200.0
+offset_top = -75.0
+offset_right = 200.0
+offset_bottom = 75.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 50
+theme_override_styles/focus = SubResource("StyleBoxEmpty_nlxqw")
+text = "START"

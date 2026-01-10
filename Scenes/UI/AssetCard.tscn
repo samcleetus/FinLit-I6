@@ -1,0 +1,53 @@
+[gd_scene load_steps=3 format=3 uid="uid://bhmdobeuhceae"]
+
+[ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_1iy87"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_upab2"]
+
+[node name="AssetCard" type="Control"]
+custom_minimum_size = Vector2(250, 350)
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="AssetVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="AssetNameLabel" type="Label" parent="AssetVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 25
+text = "Asset Name"
+horizontal_alignment = 1
+
+[node name="AssetImage" type="TextureRect" parent="AssetVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+texture = ExtResource("1_1iy87")
+stretch_mode = 5
+
+[node name="AssetValueLabel" type="Label" parent="AssetVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 25
+text = "$0"
+horizontal_alignment = 1
+
+[node name="HitButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/focus = SubResource("StyleBoxEmpty_upab2")
+flat = true

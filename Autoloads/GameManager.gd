@@ -1,5 +1,8 @@
 extends Node
 
+const AppSettings = preload("res://Scripts/Data/AppSettings.gd")
+const Persistence = preload("res://Scripts/Systems/Persistence.gd")
+
 enum RunState { IDLE, IN_RUN, ENDED }
 enum RunMode { PRACTICE, STANDARD }
 enum SceneId { BOOT, MAIN_MENU, SETTINGS, PROFILE, START_RUN, START_PRACTICE, MATCH, COLLECTION }
@@ -9,7 +12,6 @@ var current_run_state: int = RunState.IDLE
 var current_run_mode: int = RunMode.STANDARD
 var current_run_id: String = ""
 var _run_counter: int = 0
-var _should_show_boot: bool = true
 
 var _scene_paths := {
 	SceneId.BOOT: "res://Scenes/Game/Boot.tscn",
@@ -24,32 +26,38 @@ var _scene_paths := {
 
 
 func _ready() -> void:
-	print("GameManager: _ready called, initializing AppSettings with defaults and run state to IDLE")
-	_settings = AppSettings.new()
+	print("GameManager: _ready called, loading AppSettings and initializing run state to IDLE")
+	_load_or_init_settings()
 	_reset_run_tracking()
 
 
 func get_settings() -> AppSettings:
+	_ensure_settings_loaded()
 	print("GameManager: get_settings called")
-	return _settings
+	return _settings.clone()
 
 
 func set_time_horizon(value) -> void:
+	_ensure_settings_loaded()
 	print("GameManager: set_time_horizon called with %s" % value)
-	if _settings:
-		_settings.time_horizon = value
-		print("GameManager: time_horizon updated to %s" % _settings.time_horizon)
-	else:
+	if _settings == null:
 		print("GameManager: cannot set time_horizon, settings not initialized")
+		return
+	var parsed_value := _parse_int_value(value)
+	_settings.time_horizon = parsed_value
+	print("GameManager: time_horizon updated to %s" % _settings.time_horizon)
+	_persist_settings()
 
 
 func set_difficulty(value) -> void:
+	_ensure_settings_loaded()
 	print("GameManager: set_difficulty called with %s" % value)
-	if _settings:
-		_settings.difficulty = value
-		print("GameManager: difficulty updated to %s" % _settings.difficulty)
-	else:
+	if _settings == null:
 		print("GameManager: cannot set difficulty, settings not initialized")
+		return
+	_settings.difficulty = str(value)
+	print("GameManager: difficulty updated to %s" % _settings.difficulty)
+	_persist_settings()
 
 
 func start_new_run() -> bool:
@@ -72,16 +80,15 @@ func start_practice(params: Dictionary = {}) -> bool:
 	if _settings:
 		_settings.mode = "practice"
 		if params.has("time_horizon"):
-			_settings.time_horizon = params["time_horizon"]
+			set_time_horizon(params["time_horizon"])
 		if params.has("difficulty"):
-			_settings.difficulty = params["difficulty"]
+			set_difficulty(params["difficulty"])
 	return true
 
 
 func reset_run() -> void:
 	print("GameManager: reset_run called -> clearing run and returning to IDLE")
 	_reset_run_tracking()
-	_settings = AppSettings.new()
 
 
 func get_run_state() -> int:
@@ -102,6 +109,7 @@ func is_run_active() -> bool:
 
 func get_profile_summary() -> Dictionary:
 	print("GameManager: get_profile_summary called")
+	_ensure_settings_loaded()
 	if not _settings:
 		return {"status": "uninitialized"}
 	return {
@@ -169,13 +177,20 @@ func go_to_collection() -> void:
 
 
 func should_show_boot() -> bool:
-	print("GameManager: should_show_boot called -> %s" % _should_show_boot)
-	return _should_show_boot
+	_ensure_settings_loaded()
+	var flag := _settings != null and _settings.should_show_boot
+	print("GameManager: should_show_boot called -> %s" % flag)
+	return flag
 
 
 func set_should_show_boot(value: bool) -> void:
+	_ensure_settings_loaded()
 	print("GameManager: set_should_show_boot called with %s" % value)
-	_should_show_boot = value
+	if _settings == null:
+		print("GameManager: cannot set should_show_boot, settings not initialized")
+		return
+	_settings.should_show_boot = value
+	_persist_settings()
 
 
 func get_scene_path(scene_id: int) -> String:
@@ -188,6 +203,50 @@ func _reset_run_tracking() -> void:
 	current_run_state = RunState.IDLE
 	current_run_mode = RunMode.STANDARD
 	current_run_id = ""
+
+
+func _load_or_init_settings() -> void:
+	var data := Persistence.load_settings()
+	if data.is_empty():
+		print("GameManager: No saved settings found, creating defaults")
+		_settings = AppSettings.new()
+		_persist_settings(false)
+	else:
+		_settings = AppSettings.from_dict(data)
+		print("GameManager: Settings loaded (version %s)" % _settings.data_version)
+	if _settings == null:
+		print("GameManager: settings load failed, reverting to defaults")
+		_settings = AppSettings.new()
+		_persist_settings(false)
+
+
+func _persist_settings(emit_signal_flag: bool = true) -> void:
+	if _settings == null:
+		print("GameManager: cannot persist settings, instance is null")
+		return
+	Persistence.save_settings(_settings.to_dict())
+	if emit_signal_flag:
+		emit_signal("settings_changed", _settings.clone())
+
+
+func _ensure_settings_loaded() -> void:
+	if _settings == null:
+		_load_or_init_settings()
+
+
+func _parse_int_value(value) -> int:
+	if typeof(value) == TYPE_INT:
+		return value
+	if typeof(value) == TYPE_FLOAT:
+		return int(value)
+	if typeof(value) == TYPE_STRING:
+		var text: String = value
+		var parts := text.strip_edges().split(" ")
+		if parts.size() > 0 and parts[0].is_valid_int():
+			return int(parts[0])
+		if text.is_valid_int():
+			return int(text)
+	return 0
 
 
 func _state_to_string(value: int) -> String:

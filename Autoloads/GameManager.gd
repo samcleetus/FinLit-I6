@@ -2,7 +2,7 @@ extends Node
 
 enum RunState { IDLE, IN_RUN, ENDED }
 enum RunMode { PRACTICE, STANDARD }
-enum SceneId { BOOT, MAIN_MENU, SETTINGS, PROFILE, START_RUN, START_PRACTICE, MATCH }
+enum SceneId { BOOT, MAIN_MENU, SETTINGS, PROFILE, START_RUN, START_PRACTICE, MATCH, COLLECTION }
 
 var _settings: AppSettings
 var current_run_state: int = RunState.IDLE
@@ -19,6 +19,7 @@ var _scene_paths := {
 	SceneId.START_RUN: "res://Scenes/Game/StartRun.tscn",
 	SceneId.START_PRACTICE: "res://Scenes/Game/StartPractice.tscn",
 	SceneId.MATCH: "res://Scenes/Game/Match.tscn",
+	SceneId.COLLECTION: "res://Scenes/Game/Collection.tscn",
 }
 
 
@@ -156,6 +157,11 @@ func go_to_match() -> void:
 	go_to(SceneId.MATCH)
 
 
+func go_to_collection() -> void:
+	print("GameManager: go_to_collection called")
+	go_to(SceneId.COLLECTION)
+
+
 func should_show_boot() -> bool:
 	print("GameManager: should_show_boot called -> %s" % _should_show_boot)
 	return _should_show_boot
@@ -216,5 +222,7 @@ func _scene_to_string(value: int) -> String:
 			return "START_PRACTICE"
 		SceneId.MATCH:
 			return "MATCH"
+		SceneId.COLLECTION:
+			return "COLLECTION"
 		_:
 			return "UNKNOWN_SCENE"

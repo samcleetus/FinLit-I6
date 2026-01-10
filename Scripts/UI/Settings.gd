@@ -3,7 +3,7 @@ extends Control
 
 func _ready() -> void:
 	print("Settings: _ready called")
-	_setup_button("ButtonsRow/PracticeButton", "PracticeButton", func() -> void: GameManager.go_to_start_practice())
+	_setup_button("ButtonsRow/CollectionButton", "CollectionButton", func() -> void: GameManager.go_to_collection())
 	_setup_button("ButtonsRow/MainMenuButton", "MainMenuButton", func() -> void: GameManager.go_to_main_menu())
 	_setup_button("ButtonsRow/ProfileButton", "ProfileButton", func() -> void: GameManager.go_to_profile())
 	_setup_button("ButtonsRow/SettingsButton", "SettingsButton", Callable(), true)

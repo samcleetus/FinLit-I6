@@ -3,21 +3,44 @@ extends Control
 
 func _ready() -> void:
 	print("MainMenu: _ready called")
-	_connect_button("PlayButton", "PlayButton", func() -> void: GameManager.go_to_start_run())
-	_connect_button("ButtonsRow/CollectionButton", "CollectionButton", func() -> void: GameManager.go_to_collection())
-	_connect_button("ButtonsRow/MainMenuButton", "MainMenuButton", func() -> void: GameManager.go_to_main_menu(), true)
-	_connect_button("ButtonsRow/ProfileButton", "ProfileButton", func() -> void: GameManager.go_to_profile())
-	_connect_button("ButtonsRow/SettingsButton", "SettingsButton", func() -> void: GameManager.go_to_settings())
+	var play_button := find_descendant_by_name(self, "PlayButton") as Button
+	var collection_button := find_descendant_by_name(self, "CollectionButton") as Button
+	var profile_button := find_descendant_by_name(self, "ProfileButton") as Button
+	var settings_button := find_descendant_by_name(self, "SettingsButton") as Button
+	var title_label := find_descendant_by_name(self, "TitleLabel") as Label
+	var subtitle_label := find_descendant_by_name(self, "SubtitleLabel") as Label
+
+	_setup_button(play_button, "PlayButton", func() -> void: GameManager.go_to_start_run())
+	_setup_button(collection_button, "CollectionButton", func() -> void: GameManager.go_to_collection())
+	_setup_button(profile_button, "ProfileButton", func() -> void: GameManager.go_to_profile())
+	_setup_button(settings_button, "SettingsButton", func() -> void: GameManager.go_to_settings())
+
+	var settings := GameManager.get_settings()
+	var summary := "Horizon: %s years | Difficulty: %s" % [settings.time_horizon, settings.difficulty]
+	print("MainMenu: Settings summary -> %s" % summary)
+	if subtitle_label:
+		subtitle_label.text = summary
+	elif title_label:
+		if title_label.text.strip_edges() != "":
+			title_label.text = "%s\n%s" % [title_label.text, summary]
+		else:
+			title_label.text = summary
 
 
-func _connect_button(path: String, label: String, callback: Callable, disable: bool = false) -> void:
-	var node := get_node_or_null(path)
-	if node == null:
-		print("MainMenu: Missing %s at path %s" % [label, path])
-		return
-	var button := node as Button
+func find_descendant_by_name(root: Node, target_name: String) -> Node:
+	if root == null:
+		return null
+	for child in root.get_children():
+		if child.name == target_name:
+			return child
+		var match := find_descendant_by_name(child, target_name)
+		if match != null:
+			return match
+	return null
+
+
+func _setup_button(button: Button, label: String, callback: Callable) -> void:
 	if button == null:
-		print("MainMenu: Node at %s is not a Button" % path)
+		print("MainMenu: Missing %s" % label)
 		return
-	button.disabled = disable
 	button.pressed.connect(callback)

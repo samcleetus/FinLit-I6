@@ -1,10 +1,12 @@
-[gd_scene load_steps=5 format=3 uid="uid://bd1avrq7ogqn7"]
+[gd_scene load_steps=6 format=3 uid="uid://bd1avrq7ogqn7"]
 
 [ext_resource type="Script" path="res://Scripts/UI/StartRun.gd" id="1_f6pcr"]
 [ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_mhe3e"]
 [ext_resource type="PackedScene" uid="uid://bhmdobeuhceae" path="res://Scenes/UI/AssetCard.tscn" id="3_gwf7r"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_paj35"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_wti6h"]
 
 [node name="StartRun" type="Control"]
 layout_mode = 3
@@ -113,5 +115,6 @@ offset_top = -31.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_font_sizes/font_size = 60
+theme_override_styles/focus = SubResource("StyleBoxEmpty_wti6h")
 disabled = true
 text = "START"

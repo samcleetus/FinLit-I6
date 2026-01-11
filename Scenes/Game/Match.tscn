@@ -68,13 +68,23 @@ size_flags_vertical = 3
 theme_override_constants/separation = 40
 alignment = 1
 
-[node name="IndicatorPanel1" type="PanelContainer" parent="LabelVBox/IndicatorContainer"]
+[node name="IndicatorFlow" type="HFlowContainer" parent="LabelVBox/IndicatorContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 50
+alignment = 1
+last_wrap_alignment = 2
+reverse_fill = true
+
+[node name="IndicatorPanel1" type="PanelContainer" parent="LabelVBox/IndicatorContainer/IndicatorFlow"]
 layout_mode = 2
 
-[node name="IndicatorLabel" type="Label" parent="LabelVBox/IndicatorContainer/IndicatorPanel1"]
+[node name="IndicatorLabel" type="Label" parent="LabelVBox/IndicatorContainer/IndicatorFlow/IndicatorPanel1"]
 layout_mode = 2
+size_flags_vertical = 1
 theme_override_font_sizes/font_size = 40
 text = "     Indicator     "
+horizontal_alignment = 1
 
 [node name="Arena" type="Control" parent="."]
 layout_mode = 1

@@ -44,6 +44,14 @@ static func generate_year(
 		prev_ids = prev.indicator_ids
 
 	var indicator_ids := _pick_indicator_ids(prev_ids, available_indicator_ids, desired_count, config, rng)
+	if prev != null and not prev_ids.is_empty():
+		var attempts := 0
+		while attempts < 10 and _is_same_indicator_set(indicator_ids, prev_ids):
+			indicator_ids = _pick_indicator_ids(prev_ids, available_indicator_ids, desired_count, config, rng)
+			attempts += 1
+			if not _is_same_indicator_set(indicator_ids, prev_ids):
+				print("ScenarioGen: rerolled indicator set to avoid repeat")
+				break
 	scenario.indicator_ids = indicator_ids
 
 	for indicator_id in indicator_ids:
@@ -51,7 +59,15 @@ static func generate_year(
 		if prev != null and prev.indicator_levels.has(indicator_id):
 			var prev_level := prev.get_level(indicator_id, LEVEL_MID)
 			result = _transition_level(prev_level, normalized_diff, config, rng)
-		scenario.set_level(indicator_id, int(result.get("level", LEVEL_MID)))
+		var level := int(result.get("level", LEVEL_MID))
+		if prev != null and prev.indicator_levels.has(indicator_id):
+			var prev_level_again := prev.get_level(indicator_id, LEVEL_MID)
+			if level == prev_level_again:
+				var adjusted := _adjust_level(prev_level_again, rng)
+				if adjusted != level:
+					print("ScenarioGen: adjusted level for %s from %d to %d to avoid repeat" % [indicator_id, level, adjusted])
+					level = adjusted
+		scenario.set_level(indicator_id, level)
 		if result.get("shocked", false):
 			scenario.shocks_triggered.append(indicator_id)
 
@@ -151,6 +167,16 @@ static func _apply_step(prev_level: int, rng: RandomNumberGenerator) -> int:
 			return LEVEL_LOW if rng.randf() < 0.5 else LEVEL_HIGH
 
 
+static func _adjust_level(prev_level: int, rng: RandomNumberGenerator) -> int:
+	match prev_level:
+		LEVEL_LOW:
+			return LEVEL_MID
+		LEVEL_HIGH:
+			return LEVEL_MID
+		_:
+			return LEVEL_LOW if rng.randf() < 0.5 else LEVEL_HIGH
+
+
 static func _sample_ids(pool: Array[String], count: int, rng: RandomNumberGenerator) -> Array[String]:
 	var result: Array[String] = []
 	if count <= 0 or pool.is_empty():
@@ -170,3 +196,16 @@ static func _normalize_difficulty(difficulty: String) -> String:
 		return normalized
 	push_warning("ScenarioGenerator: unknown difficulty '%s'; defaulting to medium." % difficulty)
 	return "medium"
+
+
+static func _is_same_indicator_set(a: Array[String], b: Array[String]) -> bool:
+	if a.size() != b.size():
+		return false
+	var a_sorted := a.duplicate()
+	var b_sorted := b.duplicate()
+	a_sorted.sort()
+	b_sorted.sort()
+	for i in a_sorted.size():
+		if a_sorted[i] != b_sorted[i]:
+			return false
+	return true

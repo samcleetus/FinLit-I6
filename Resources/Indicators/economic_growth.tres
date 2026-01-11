@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Indicator" load_steps=2 format=3 uid="uid://cdas57fx7sghn"]
+
+[ext_resource type="Script" path="res://Scripts/Resources/Indicator.gd" id="1_pytw4"]
+
+[resource]
+script = ExtResource("1_pytw4")
+id = "economic_growth"
+display_name = "Economic Growth"
+description = "The rate at which the economy is expanding"
+low_value = -1.0
+mid_value = 2.0
+high_value = 5.0

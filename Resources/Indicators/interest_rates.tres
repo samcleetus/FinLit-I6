@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="Indicator" load_steps=2 format=3 uid="uid://busfq144kt44"]
+
+[ext_resource type="Script" path="res://Scripts/Resources/Indicator.gd" id="1_5f8th"]
+
+[resource]
+script = ExtResource("1_5f8th")
+id = "interest_rates"
+display_name = "Interest Rates"
+description = "The cost of borrowing money in the economy"
+low_value = 1.0
+mid_value = 3.0
+high_value = 6.0

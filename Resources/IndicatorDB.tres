@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="IndicatorDB" load_steps=7 format=3 uid="uid://j68yrtfsv6mv"]
+
+[ext_resource type="Script" path="res://Scripts/Resources/Indicator.gd" id="1_fdyha"]
+[ext_resource type="Resource" uid="uid://dpd3gevggjxw1" path="res://Resources/Indicators/inflation.tres" id="2_5ilra"]
+[ext_resource type="Script" path="res://Scripts/Resources/IndicatorDB.gd" id="2_lgs5r"]
+[ext_resource type="Resource" uid="uid://busfq144kt44" path="res://Resources/Indicators/interest_rates.tres" id="3_xvqs8"]
+[ext_resource type="Resource" uid="uid://cdas57fx7sghn" path="res://Resources/Indicators/economic_growth.tres" id="4_8duf5"]
+[ext_resource type="Resource" uid="uid://hkq4qme6ri3v" path="res://Resources/Indicators/unemployment.tres" id="5_r8buh"]
+
+[resource]
+script = ExtResource("2_lgs5r")
+indicators = Array[ExtResource("1_fdyha")]([ExtResource("2_5ilra"), ExtResource("3_xvqs8"), ExtResource("4_8duf5"), ExtResource("5_r8buh")])

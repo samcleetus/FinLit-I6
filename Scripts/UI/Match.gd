@@ -15,6 +15,7 @@ func _ready() -> void:
 	_cache_indicator_nodes()
 	_load_indicator_db()
 	_render_current_scenario()
+	GameManager.get_match_view_model()
 
 
 func _session_mode_to_string(mode: int) -> String:

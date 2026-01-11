@@ -3,6 +3,8 @@ extends Node
 const AppSettingsResource = preload("res://Scripts/Data/AppSettings.gd")
 const RunStateResource = preload("res://Scripts/Data/RunState.gd")
 const PersistenceUtil = preload("res://Scripts/Systems/Persistence.gd")
+const IndicatorDBPath := "res://Resources/IndicatorDB.tres"
+const AssetDBPath := "res://Resources/AssetDB.tres"
 
 @warning_ignore("unused_signal")
 signal settings_changed(settings)
@@ -116,6 +118,27 @@ func get_run_state() -> Object:
 	var id_text: String = run_state.run_id if run_state else "null"
 	print("GameManager: get_run_state called -> session_mode=%s run_id=%s" % [_session_mode_to_string(session_mode), id_text])
 	return run_state
+
+
+func get_match_view_model() -> MatchViewModel:
+	_ensure_settings_loaded()
+	var vm := MatchViewModel.new()
+	var settings := _settings
+	vm.year_index = current_year_index
+	vm.time_horizon = settings.time_horizon if settings else 0
+	vm.difficulty = settings.difficulty if settings else ""
+	var state := run_state as RunState
+	vm.debug_run_id = state.run_id if state else ""
+	vm.debug_seed = run_seed
+
+	if current_year_scenario == null:
+		push_warning("GameManager: get_match_view_model called but current_year_scenario is null.")
+	else:
+		vm.indicators = _build_indicator_view_models(current_year_scenario)
+
+	vm.asset_slots = _build_asset_slot_view_models()
+	print("GameManager: built MatchViewModel -> %s" % vm.to_debug_string())
+	return vm
 
 
 func is_run_active() -> bool:
@@ -421,3 +444,93 @@ func _get_available_indicator_ids() -> Array[String]:
 			continue
 		ids.append(indicator.id)
 	return ids
+
+
+func _build_indicator_view_models(scenario: YearScenario) -> Array[IndicatorViewModel]:
+	var indicator_vms: Array[IndicatorViewModel] = []
+	var indicator_db := load(IndicatorDBPath)
+	if indicator_db == null:
+		push_warning("GameManager: failed to load IndicatorDB at %s while building match view model." % IndicatorDBPath)
+		return indicator_vms
+	if not indicator_db.has_method("get_by_id"):
+		push_warning("GameManager: IndicatorDB at %s is missing get_by_id()" % IndicatorDBPath)
+		return indicator_vms
+
+	for indicator_id in scenario.indicator_ids:
+		if indicator_id == "":
+			continue
+		var indicator: Object = indicator_db.get_by_id(indicator_id)
+		if indicator == null:
+			push_warning("GameManager: indicator '%s' not found in IndicatorDB." % indicator_id)
+			continue
+
+		var level := scenario.get_level(indicator_id, ScenarioGenerator.LEVEL_MID)
+		var indicator_seed := _make_indicator_seed(indicator_id)
+		var value: float = indicator.mid_value
+		if level == ScenarioGenerator.LEVEL_LOW:
+			value = _rand_between_values(indicator.low_value, indicator.mid_value, indicator_seed)
+		elif level == ScenarioGenerator.LEVEL_HIGH:
+			value = _rand_between_values(indicator.mid_value, indicator.high_value, indicator_seed)
+
+		var value_int := int(round(value))
+		var value_text := "%s: %d%%" % [indicator.display_name, value_int]
+		var view_model := IndicatorViewModel.new(indicator_id, indicator.display_name, value_text)
+		indicator_vms.append(view_model)
+
+	return indicator_vms
+
+
+func _build_asset_slot_view_models() -> Array[AssetSlotViewModel]:
+	var slots: Array[AssetSlotViewModel] = []
+	var state := run_state as RunState
+	var chosen_ids: Array[String] = []
+	if state != null:
+		chosen_ids = state.chosen_asset_ids.duplicate()
+	elif session_mode == SessionMode.RUN:
+		push_warning("GameManager: get_match_view_model called without a valid run_state; asset slots will be empty.")
+
+	var asset_db := load(AssetDBPath)
+	var asset_db_valid := asset_db != null and asset_db.has_method("get_by_id")
+	if not asset_db_valid and not chosen_ids.is_empty():
+		push_warning("GameManager: AssetDB missing or invalid at %s; asset slots will be empty." % AssetDBPath)
+
+	for i in 4:
+		var slot_index := i + 1
+		var asset_id := ""
+		if i < chosen_ids.size():
+			asset_id = chosen_ids[i]
+
+		var display_name := ""
+		var icon: Texture2D = null
+		if asset_id != "" and asset_db_valid:
+			var asset: Object = asset_db.get_by_id(asset_id)
+			if asset == null:
+				push_warning("GameManager: asset '%s' not found in AssetDB." % asset_id)
+			else:
+				display_name = asset.display_name
+				icon = asset.icon
+		elif asset_id != "" and not asset_db_valid:
+			push_warning("GameManager: asset '%s' could not be resolved because AssetDB is unavailable." % asset_id)
+
+		var slot_view_model := AssetSlotViewModel.new(slot_index, asset_id, display_name, icon)
+		slots.append(slot_view_model)
+
+	return slots
+
+
+func _make_indicator_seed(indicator_id: String) -> int:
+	var id_hash := hash(indicator_id)
+	var mixed := int((run_seed * 92821) ^ (current_year_index * 68917) ^ id_hash)
+	if mixed == 0:
+		mixed = id_hash ^ 12345
+	return abs(mixed)
+
+
+func _rand_between_values(a: float, b: float, seed_value: int) -> float:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+	var min_value: float = min(a, b)
+	var max_value: float = max(a, b)
+	if is_equal_approx(min_value, max_value):
+		return min_value
+	return rng.randf_range(min_value, max_value)

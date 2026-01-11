@@ -96,6 +96,10 @@ func _populate_grid() -> void:
 			card_instance.apply_asset(asset)
 		if card_instance.has_method("set_value_visible"):
 			card_instance.set_value_visible(false)
+		if card_instance.has_method("set_outline_enabled"):
+			card_instance.set_outline_enabled(true)
+		if card_instance.has_method("set_name_font_size"):
+			card_instance.set_name_font_size(40)
 		if card_instance.has_method("set_interactable"):
 			card_instance.set_interactable(true)
 		if card_instance.has_method("set_selected"):

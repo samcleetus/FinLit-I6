@@ -2,7 +2,7 @@ extends Control
 
 const IndicatorDBPath := "res://Resources/IndicatorDB.tres"
 
-var _indicator_container: Node = null
+var _indicator_flow: Node = null
 var _indicator_template: Control = null
 var _indicator_db: IndicatorDB = null
 
@@ -42,7 +42,7 @@ func _render_current_scenario() -> void:
 	if scenario == null:
 		push_error("Match: current_year_scenario missing; ensure a run was prepared before entering Match.")
 		return
-	if _indicator_container == null or _indicator_template == null:
+	if _indicator_flow == null or _indicator_template == null:
 		push_error("Match: indicator container/template missing.")
 		return
 
@@ -58,7 +58,8 @@ func _render_current_scenario() -> void:
 		var value := _level_to_value(level, indicator)
 		var panel := _indicator_template.duplicate()
 		panel.visible = true
-		_indicator_container.add_child(panel)
+		panel.name = "IndicatorPanel_%s" % indicator_id
+		_indicator_flow.add_child(panel)
 		var label := panel.get_node_or_null("IndicatorLabel") as Label
 		if label:
 			label.text = "    %s: %d%%   " % [indicator.display_name, int(round(value))]
@@ -68,20 +69,27 @@ func _render_current_scenario() -> void:
 
 
 func _clear_indicator_panels() -> void:
-	for child in _indicator_container.get_children():
+	for child in _indicator_flow.get_children():
 		if child == _indicator_template:
 			continue
 		child.queue_free()
 
 
 func _cache_indicator_nodes() -> void:
-	_indicator_container = get_node_or_null("LabelVBox/IndicatorContainer")
-	if _indicator_container == null:
-		push_error("Match: missing LabelVBox/IndicatorContainer.")
+	_indicator_flow = get_node_or_null("LabelVBox/IndicatorContainer/IndicatorFlow")
+	if _indicator_flow == null:
+		push_error("Match: missing LabelVBox/IndicatorContainer/IndicatorFlow.")
 		return
-	_indicator_template = _indicator_container.get_node_or_null("IndicatorPanel1") as Control
+	_indicator_template = _indicator_flow.get_node_or_null("IndicatorPanel") as Control
 	if _indicator_template == null:
-		push_error("Match: missing IndicatorPanel1 template.")
+		for child in _indicator_flow.get_children():
+			if child is Control:
+				_indicator_template = child
+				break
+	if _indicator_template == null:
+		push_error("Match: missing IndicatorPanel template.")
+		return
+	_indicator_template.visible = false
 
 
 func _load_indicator_db() -> void:

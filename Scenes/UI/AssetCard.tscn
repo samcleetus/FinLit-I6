@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://bhmdobeuhceae"]
+[gd_scene load_steps=4 format=3 uid="uid://bhmdobeuhceae"]
 
 [ext_resource type="Texture2D" uid="uid://d1jyq6h51ma0r" path="res://Assets/Images/Animals/Giraffe.png" id="1_om4de"]
+[ext_resource type="Script" path="res://Scripts/UI/AssetCard.gd" id="1_y8jg7"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_upab2"]
 
@@ -14,6 +15,7 @@ anchor_right = 0.5
 anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_y8jg7")
 
 [node name="AssetVBox" type="VBoxContainer" parent="."]
 layout_mode = 1

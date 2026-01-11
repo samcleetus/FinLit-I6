@@ -12,4 +12,4 @@ happy_icon = ExtResource("1_s4cr6")
 sad_icon = ExtResource("1_s4cr6")
 description = "Liquid funds with no lock-in period"
 duration_years = 1
-starting_unlocked = false
+starting_unlocked = true

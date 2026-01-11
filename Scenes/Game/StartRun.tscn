@@ -72,16 +72,16 @@ size_flags_vertical = 3
 theme_override_constants/separation = 20
 alignment = 1
 
-[node name="AssetCard1" parent="AssetVBox/SelectedAssetContainer" instance=ExtResource("3_gwf7r")]
+[node name="AssetCard1" parent="AssetVBox/SelectedAssetContainer" groups=["SelectedAssets"] instance=ExtResource("3_gwf7r")]
 layout_mode = 2
 
-[node name="AssetCard2" parent="AssetVBox/SelectedAssetContainer" instance=ExtResource("3_gwf7r")]
+[node name="AssetCard2" parent="AssetVBox/SelectedAssetContainer" groups=["SelectedAssets"] instance=ExtResource("3_gwf7r")]
 layout_mode = 2
 
-[node name="AssetCard3" parent="AssetVBox/SelectedAssetContainer" instance=ExtResource("3_gwf7r")]
+[node name="AssetCard3" parent="AssetVBox/SelectedAssetContainer" groups=["SelectedAssets"] instance=ExtResource("3_gwf7r")]
 layout_mode = 2
 
-[node name="AssetCard4" parent="AssetVBox/SelectedAssetContainer" instance=ExtResource("3_gwf7r")]
+[node name="AssetCard4" parent="AssetVBox/SelectedAssetContainer" groups=["SelectedAssets"] instance=ExtResource("3_gwf7r")]
 layout_mode = 2
 
 [node name="AssetScroll" type="ScrollContainer" parent="."]
@@ -102,6 +102,8 @@ size_flags_vertical = 3
 
 [node name="AssetGrid" type="GridContainer" parent="AssetScroll/AssetGridCenter"]
 layout_mode = 2
+theme_override_constants/h_separation = 70
+theme_override_constants/v_separation = 100
 columns = 3
 
 [node name="StartButton" type="Button" parent="."]

@@ -10,15 +10,11 @@ var _name_label: Label
 var _image: TextureRect
 var _value_label: Label
 var _base_image_scale: Vector2 = Vector2.ONE
+var _base_image_scale_set: bool = false
 
 
 func _ready() -> void:
-	_hit_button = get_node_or_null("HitButton")
-	_name_label = get_node_or_null("AssetVBox/AssetNameLabel")
-	_image = get_node_or_null("AssetVBox/AssetImage")
-	_value_label = get_node_or_null("AssetVBox/AssetValueLabel")
-	if _image:
-		_base_image_scale = _image.scale
+	_ensure_nodes()
 	if _hit_button:
 		_hit_button.disabled = false
 		_hit_button.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -26,6 +22,7 @@ func _ready() -> void:
 
 
 func apply_asset(asset: Asset) -> void:
+	_ensure_nodes()
 	if asset == null:
 		clear_asset()
 		return
@@ -42,6 +39,7 @@ func apply_asset(asset: Asset) -> void:
 
 
 func clear_asset() -> void:
+	_ensure_nodes()
 	asset_id = ""
 	if _name_label:
 		_name_label.text = ""
@@ -58,17 +56,20 @@ func set_selected(is_selected: bool) -> void:
 
 
 func set_interactable(is_enabled: bool) -> void:
+	_ensure_nodes()
 	if _hit_button:
 		_hit_button.disabled = not is_enabled
 		_hit_button.mouse_filter = Control.MOUSE_FILTER_STOP if is_enabled else Control.MOUSE_FILTER_IGNORE
 
 
 func set_value_visible(visible_enabled: bool) -> void:
+	_ensure_nodes()
 	if _value_label:
 		_value_label.visible = visible_enabled
 
 
 func set_icon_scale(scale_factor: float) -> void:
+	_ensure_nodes()
 	if _image:
 		_image.scale = _base_image_scale * scale_factor
 
@@ -78,3 +79,17 @@ func _on_pressed() -> void:
 		return
 	print("AssetCard pressed -> %s" % asset_id)
 	emit_signal("pressed", asset_id)
+
+
+func _ensure_nodes() -> void:
+	if _hit_button == null:
+		_hit_button = get_node_or_null("HitButton")
+	if _name_label == null:
+		_name_label = get_node_or_null("AssetVBox/AssetNameLabel")
+	if _image == null:
+		_image = get_node_or_null("AssetVBox/AssetImage")
+	if _value_label == null:
+		_value_label = get_node_or_null("AssetVBox/AssetValueLabel")
+	if _image and not _base_image_scale_set:
+		_base_image_scale = _image.scale
+		_base_image_scale_set = true

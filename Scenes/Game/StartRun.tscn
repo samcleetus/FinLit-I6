@@ -87,13 +87,14 @@ layout_mode = 2
 [node name="AssetScroll" type="ScrollContainer" parent="."]
 layout_mode = 1
 anchors_preset = -1
-anchor_left = 0.05
+anchor_left = 0.03
 anchor_top = 0.41
-anchor_right = 0.95
+anchor_right = 0.97
 anchor_bottom = 0.83
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 0
+horizontal_scroll_mode = 0
 
 [node name="AssetGridCenter" type="CenterContainer" parent="AssetScroll"]
 layout_mode = 2

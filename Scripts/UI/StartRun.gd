@@ -2,7 +2,8 @@ extends Control
 
 const AssetCardScenePath := "res://Scenes/UI/AssetCard.tscn"
 const AssetDBPath := "res://Resources/AssetDB.tres"
-const GRID_ICON_SCALE := 1.2
+const GRID_CARD_SCALE := 1.25
+const GRID_CARD_DEFAULT_SIZE := Vector2(250, 350)
 
 var selected_asset_ids: Array[String] = []
 var slot_nodes: Array[Node] = []
@@ -80,27 +81,28 @@ func _populate_grid() -> void:
 
 	grid_cards_by_id.clear()
 	asset_by_id.clear()
+	var unlocked_count := 0
 	for asset in asset_db.get_all():
 		if asset == null or asset.id == "":
 			continue
 		if not asset.starting_unlocked:
 			continue
+		unlocked_count += 1
 		asset_by_id[asset.id] = asset
 		var card_instance := card_scene.instantiate()
+		_scale_grid_card(card_instance)
 		_asset_grid.add_child(card_instance)
 		if card_instance.has_method("apply_asset"):
 			card_instance.apply_asset(asset)
 		if card_instance.has_method("set_value_visible"):
 			card_instance.set_value_visible(false)
-		if card_instance.has_method("set_icon_scale"):
-			card_instance.set_icon_scale(GRID_ICON_SCALE)
 		if card_instance.has_method("set_interactable"):
 			card_instance.set_interactable(true)
 		if card_instance.has_method("set_selected"):
 			card_instance.set_selected(false)
 		card_instance.pressed.connect(func(id: String) -> void: _on_grid_card_pressed(id))
 		grid_cards_by_id[asset.id] = card_instance
-	print("StartRun: populated grid with %s assets" % grid_cards_by_id.size())
+	print("StartRun: displaying %s unlocked assets" % unlocked_count)
 
 
 func _on_grid_card_pressed(asset_id: String) -> void:
@@ -118,10 +120,12 @@ func _on_grid_card_pressed(asset_id: String) -> void:
 func _select_asset(asset_id: String) -> void:
 	if selected_asset_ids.size() >= 4:
 		return
+	var target_index := selected_asset_ids.size()
 	selected_asset_ids.append(asset_id)
 	var grid_card := grid_cards_by_id.get(asset_id, null) as Control
 	if grid_card and grid_card.has_method("set_selected"):
 		grid_card.set_selected(true)
+	print("StartRun: selected %s into slot %s" % [asset_id, target_index + 1])
 
 
 func _deselect_asset(asset_id: String) -> void:
@@ -129,6 +133,7 @@ func _deselect_asset(asset_id: String) -> void:
 	var grid_card := grid_cards_by_id.get(asset_id, null) as Control
 	if grid_card and grid_card.has_method("set_selected"):
 		grid_card.set_selected(false)
+	print("StartRun: deselected %s" % asset_id)
 
 
 func _update_start_button_state() -> void:
@@ -181,3 +186,14 @@ func _clear_slot_card(slot: Node) -> void:
 func _disable_slot_interaction(slot: Node) -> void:
 	if slot and slot.has_method("set_interactable"):
 		slot.set_interactable(false)
+
+
+func _scale_grid_card(card_instance: Control) -> void:
+	if card_instance == null:
+		return
+	var base_size := card_instance.custom_minimum_size
+	if base_size == Vector2.ZERO:
+		base_size = card_instance.size
+	if base_size == Vector2.ZERO:
+		base_size = GRID_CARD_DEFAULT_SIZE
+	card_instance.custom_minimum_size = base_size * GRID_CARD_SCALE

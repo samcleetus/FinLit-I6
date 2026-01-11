@@ -12,4 +12,4 @@ happy_icon = ExtResource("1_5q7mh")
 sad_icon = ExtResource("1_5q7mh")
 description = "Higher volatility investment with longer commitment"
 duration_years = 5
-starting_unlocked = false
+starting_unlocked = true

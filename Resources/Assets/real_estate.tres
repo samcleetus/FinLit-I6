@@ -12,4 +12,4 @@ happy_icon = ExtResource("1_dvscq")
 sad_icon = ExtResource("1_dvscq")
 description = "Illiquid investment locked in for a long time horizon"
 duration_years = 10
-starting_unlocked = false
+starting_unlocked = true

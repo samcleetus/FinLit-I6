@@ -1,9 +1,11 @@
-[gd_scene load_steps=8 format=3 uid="uid://b1kp1dg4htqos"]
+[gd_scene load_steps=9 format=3 uid="uid://b1kp1dg4htqos"]
 
 [ext_resource type="Script" path="res://Scripts/UI/Settings.gd" id="1_c7155"]
 [ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_lx8ap"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_bwr45"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_gp4cd"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_7r4k3"]
 
@@ -53,7 +55,7 @@ anchors_preset = -1
 anchor_left = 0.05
 anchor_top = 0.23
 anchor_right = 0.95
-anchor_bottom = 0.8
+anchor_bottom = 0.7
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 0
@@ -81,13 +83,14 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 60
 theme_override_styles/focus = SubResource("StyleBoxEmpty_bwr45")
-item_count = 3
+item_count = 4
 popup/item_0/text = "10"
-popup/item_0/id = 1
-popup/item_1/text = "20"
-popup/item_1/id = 2
-popup/item_2/text = "30"
-popup/item_2/id = 3
+popup/item_1/text = "12"
+popup/item_1/id = 1
+popup/item_2/text = "15"
+popup/item_2/id = 2
+popup/item_3/text = "20"
+popup/item_3/id = 3
 
 [node name="DifficultyRow" type="HBoxContainer" parent="ContentScrollContainer/ContentVBox"]
 layout_mode = 2
@@ -112,6 +115,21 @@ popup/item_1/text = "20"
 popup/item_1/id = 2
 popup/item_2/text = "30"
 popup/item_2/id = 3
+
+[node name="SaveButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.25
+anchor_top = 0.75
+anchor_right = 0.75
+anchor_bottom = 0.8
+offset_top = -91.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 60
+theme_override_styles/focus = SubResource("StyleBoxEmpty_gp4cd")
+disabled = true
+text = "Save Changes"
 
 [node name="ButtonsRow" type="HBoxContainer" parent="."]
 layout_mode = 1

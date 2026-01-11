@@ -32,6 +32,7 @@ func _ready() -> void:
 	print("GameManager: _ready called, loading AppSettings and initializing run state to IDLE")
 	_load_or_init_settings()
 	_reset_run_tracking()
+	debug_validate_data_resources()
 
 
 func get_settings() -> AppSettings:
@@ -297,3 +298,44 @@ func _scene_to_string(value: int) -> String:
 			return "COLLECTION"
 		_:
 			return "UNKNOWN_SCENE"
+
+
+func debug_validate_data_resources() -> void:
+	print("DataCheck: starting")
+	var asset_path := "res://Resources/AssetDB.tres"
+	var indicator_path := "res://Resources/IndicatorDB.tres"
+	var behavior_path := "res://Resources/BehaviorMatrix.tres"
+
+	var asset_db := load(asset_path)
+	if asset_db == null:
+		print("DataCheck: FAILED to load AssetDB at %s" % asset_path)
+		return
+
+	var indicator_db := load(indicator_path)
+	if indicator_db == null:
+		print("DataCheck: FAILED to load IndicatorDB at %s" % indicator_path)
+		return
+
+	var behavior_matrix := load(behavior_path)
+	if behavior_matrix == null:
+		print("DataCheck: FAILED to load BehaviorMatrix at %s" % behavior_path)
+		return
+
+	var asset_count: int = asset_db.get_all().size() if asset_db.has_method("get_all") else 0
+	var indicator_count: int = indicator_db.get_all().size() if indicator_db.has_method("get_all") else 0
+	var rule_count: int = behavior_matrix.rules.size() if behavior_matrix is BehaviorMatrix else 0
+	print("DataCheck: assets=%s indicators=%s rules=%s" % [asset_count, indicator_count, rule_count])
+
+	var samples := [
+		{"asset": "cash", "indicator": "inflation"},
+		{"asset": "bonds", "indicator": "interest_rates"},
+		{"asset": "stocks", "indicator": "unemployment"},
+	]
+
+	for sample in samples:
+		var low := 0
+		var high := 0
+		if behavior_matrix is BehaviorMatrix:
+			low = behavior_matrix.get_effect(sample.asset, sample.indicator, false)
+			high = behavior_matrix.get_effect(sample.asset, sample.indicator, true)
+		print("DataCheck: %s|%s low=%s high=%s" % [sample.asset, sample.indicator, low, high])

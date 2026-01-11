@@ -1,0 +1,120 @@
+[gd_resource type="Resource" script_class="BehaviorMatrix" load_steps=19 format=3 uid="uid://vmlbqpxn35yk"]
+
+[ext_resource type="Script" path="res://Scripts/Resources/BehaviorRule.gd" id="1_5h0oj"]
+[ext_resource type="Script" path="res://Scripts/Resources/BehaviorMatrix.gd" id="2_jyr06"]
+
+[sub_resource type="Resource" id="Resource_g5uq7"]
+script = ExtResource("1_5h0oj")
+asset_id = "cash"
+indicator_id = "interest_rates"
+low_effect = -1
+high_effect = 1
+
+[sub_resource type="Resource" id="Resource_poyiq"]
+script = ExtResource("1_5h0oj")
+asset_id = "cash"
+indicator_id = "inflation"
+low_effect = 0
+high_effect = -1
+
+[sub_resource type="Resource" id="Resource_trfop"]
+script = ExtResource("1_5h0oj")
+asset_id = "cash"
+indicator_id = "economic_growth"
+low_effect = 0
+high_effect = 0
+
+[sub_resource type="Resource" id="Resource_5vhb5"]
+script = ExtResource("1_5h0oj")
+asset_id = "cash"
+indicator_id = "unemployment"
+low_effect = 0
+high_effect = 1
+
+[sub_resource type="Resource" id="Resource_4cmup"]
+script = ExtResource("1_5h0oj")
+asset_id = "bonds"
+indicator_id = "interest_rates"
+low_effect = 1
+high_effect = -1
+
+[sub_resource type="Resource" id="Resource_qm30n"]
+script = ExtResource("1_5h0oj")
+asset_id = "bonds"
+indicator_id = "inflation"
+low_effect = 0
+high_effect = -1
+
+[sub_resource type="Resource" id="Resource_4am24"]
+script = ExtResource("1_5h0oj")
+asset_id = "bonds"
+indicator_id = "economic_growth"
+low_effect = -1
+high_effect = 1
+
+[sub_resource type="Resource" id="Resource_edyyu"]
+script = ExtResource("1_5h0oj")
+asset_id = "bonds"
+indicator_id = "unemployment"
+low_effect = -1
+high_effect = 1
+
+[sub_resource type="Resource" id="Resource_hhmcr"]
+script = ExtResource("1_5h0oj")
+asset_id = "stocks"
+indicator_id = "interest_rates"
+low_effect = 1
+high_effect = -1
+
+[sub_resource type="Resource" id="Resource_4mjjm"]
+script = ExtResource("1_5h0oj")
+asset_id = "stocks"
+indicator_id = "inflation"
+low_effect = 0
+high_effect = 0
+
+[sub_resource type="Resource" id="Resource_eb5wt"]
+script = ExtResource("1_5h0oj")
+asset_id = "stocks"
+indicator_id = "economic_growth"
+low_effect = 1
+high_effect = -1
+
+[sub_resource type="Resource" id="Resource_s3r5r"]
+script = ExtResource("1_5h0oj")
+asset_id = "stocks"
+indicator_id = "unemployment"
+low_effect = 1
+high_effect = -1
+
+[sub_resource type="Resource" id="Resource_rxv0r"]
+script = ExtResource("1_5h0oj")
+asset_id = "real_estate"
+indicator_id = "interest_rates"
+low_effect = 1
+high_effect = -1
+
+[sub_resource type="Resource" id="Resource_12s21"]
+script = ExtResource("1_5h0oj")
+asset_id = "real_estate"
+indicator_id = "inflation"
+low_effect = 0
+high_effect = 0
+
+[sub_resource type="Resource" id="Resource_vai2i"]
+script = ExtResource("1_5h0oj")
+asset_id = "real_estate"
+indicator_id = "economic_growth"
+low_effect = -1
+high_effect = 1
+
+[sub_resource type="Resource" id="Resource_xi72r"]
+script = ExtResource("1_5h0oj")
+asset_id = "real_estate"
+indicator_id = "unemployment"
+low_effect = 1
+high_effect = -1
+
+[resource]
+script = ExtResource("2_jyr06")
+rules = Array[ExtResource("1_5h0oj")]([SubResource("Resource_g5uq7"), SubResource("Resource_poyiq"), SubResource("Resource_trfop"), SubResource("Resource_5vhb5"), SubResource("Resource_4cmup"), SubResource("Resource_qm30n"), SubResource("Resource_4am24"), SubResource("Resource_edyyu"), SubResource("Resource_hhmcr"), SubResource("Resource_4mjjm"), SubResource("Resource_eb5wt"), SubResource("Resource_s3r5r"), SubResource("Resource_rxv0r"), SubResource("Resource_12s21"), SubResource("Resource_vai2i"), SubResource("Resource_xi72r")])

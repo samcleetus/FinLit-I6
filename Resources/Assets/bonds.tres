@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Asset" load_steps=3 format=3 uid="uid://6kk6b1uqxbcx"]
+
+[ext_resource type="Texture2D" uid="uid://c8a8jb1nxjoqr" path="res://Assets/Images/Animals/Horse.png" id="1_3deeu"]
+[ext_resource type="Script" path="res://Scripts/Resources/Asset.gd" id="1_hso4e"]
+
+[resource]
+script = ExtResource("1_hso4e")
+id = "bonds"
+display_name = "Bonds"
+icon = ExtResource("1_3deeu")
+description = "Lower-risk investment with a short commitment period"
+duration_years = 2
+starting_unlocked = true

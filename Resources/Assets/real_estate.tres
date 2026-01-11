@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Asset" load_steps=3 format=3 uid="uid://dw5qpiwm8pxdq"]
+
+[ext_resource type="Texture2D" uid="uid://2j43h3jilx0q" path="res://Assets/Images/Animals/Elephant.png" id="1_dvscq"]
+[ext_resource type="Script" path="res://Scripts/Resources/Asset.gd" id="1_qigxc"]
+
+[resource]
+script = ExtResource("1_qigxc")
+id = "real_estate"
+display_name = "Real Estate"
+icon = ExtResource("1_dvscq")
+description = "Illiquid investment locked in for a long time horizon"
+duration_years = 10
+starting_unlocked = false

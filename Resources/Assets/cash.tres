@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Asset" load_steps=3 format=3 uid="uid://dk5ico408ogwt"]
+
+[ext_resource type="Texture2D" uid="uid://bjxxslxuocdqa" path="res://Assets/Images/Animals/Polar Bear.png" id="1_s4cr6"]
+[ext_resource type="Script" path="res://Scripts/Resources/Asset.gd" id="2_y2tbq"]
+
+[resource]
+script = ExtResource("2_y2tbq")
+id = "cash"
+display_name = "Cash"
+icon = ExtResource("1_s4cr6")
+description = "Liquid funds with no lock-in period"
+duration_years = 1
+starting_unlocked = false

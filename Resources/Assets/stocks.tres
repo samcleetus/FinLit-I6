@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="Asset" load_steps=3 format=3 uid="uid://b1wkk6p5abiwc"]
+
+[ext_resource type="Texture2D" uid="uid://d1jyq6h51ma0r" path="res://Assets/Images/Animals/Giraffe.png" id="1_5q7mh"]
+[ext_resource type="Script" path="res://Scripts/Resources/Asset.gd" id="1_6f216"]
+
+[resource]
+script = ExtResource("1_6f216")
+id = "stocks"
+display_name = "Stocks"
+icon = ExtResource("1_5q7mh")
+description = "Higher volatility investment with longer commitment"
+duration_years = 5
+starting_unlocked = false

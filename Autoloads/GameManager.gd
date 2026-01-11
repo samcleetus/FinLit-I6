@@ -1,7 +1,10 @@
 extends Node
 
-const AppSettings = preload("res://Scripts/Data/AppSettings.gd")
-const Persistence = preload("res://Scripts/Systems/Persistence.gd")
+const AppSettingsResource = preload("res://Scripts/Data/AppSettings.gd")
+const PersistenceUtil = preload("res://Scripts/Systems/Persistence.gd")
+
+@warning_ignore("unused_signal")
+signal settings_changed(settings)
 
 enum RunState { IDLE, IN_RUN, ENDED }
 enum RunMode { PRACTICE, STANDARD }
@@ -137,7 +140,10 @@ func go_to(scene_id: int) -> void:
 		print("GameManager: get_tree() was null, cannot change scene")
 		return
 	var err := tree.change_scene_to_file(scene_path)
-	if err != OK:
+	if err == ERR_BUSY:
+		print("GameManager: change_scene_to_file busy, deferring -> scene_id=%s path=%s" % [_scene_to_string(scene_id), scene_path])
+		tree.call_deferred("change_scene_to_file", scene_path)
+	elif err != OK:
 		print("GameManager: go_to failed -> scene_id=%s path=%s err=%s" % [_scene_to_string(scene_id), scene_path, err])
 
 
@@ -206,17 +212,17 @@ func _reset_run_tracking() -> void:
 
 
 func _load_or_init_settings() -> void:
-	var data := Persistence.load_settings()
+	var data := PersistenceUtil.load_settings()
 	if data.is_empty():
 		print("GameManager: No saved settings found, creating defaults")
-		_settings = AppSettings.new()
+		_settings = AppSettingsResource.new()
 		_persist_settings(false)
 	else:
-		_settings = AppSettings.from_dict(data)
+		_settings = AppSettingsResource.from_dict(data)
 		print("GameManager: Settings loaded (version %s)" % _settings.data_version)
 	if _settings == null:
 		print("GameManager: settings load failed, reverting to defaults")
-		_settings = AppSettings.new()
+		_settings = AppSettingsResource.new()
 		_persist_settings(false)
 
 
@@ -224,7 +230,7 @@ func _persist_settings(emit_signal_flag: bool = true) -> void:
 	if _settings == null:
 		print("GameManager: cannot persist settings, instance is null")
 		return
-	Persistence.save_settings(_settings.to_dict())
+	PersistenceUtil.save_settings(_settings.to_dict())
 	if emit_signal_flag:
 		emit_signal("settings_changed", _settings.clone())
 

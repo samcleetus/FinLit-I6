@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AssetDB" load_steps=7 format=3 uid="uid://csuakbwhabx7c"]
+
+[ext_resource type="Script" path="res://Scripts/Resources/Asset.gd" id="1_hcp0a"]
+[ext_resource type="Resource" uid="uid://dk5ico408ogwt" path="res://Resources/Assets/cash.tres" id="2_incy7"]
+[ext_resource type="Script" path="res://Scripts/Resources/AssetDB.gd" id="2_s8ho3"]
+[ext_resource type="Resource" uid="uid://6kk6b1uqxbcx" path="res://Resources/Assets/bonds.tres" id="3_op51l"]
+[ext_resource type="Resource" uid="uid://b1wkk6p5abiwc" path="res://Resources/Assets/stocks.tres" id="4_uidgd"]
+[ext_resource type="Resource" uid="uid://dw5qpiwm8pxdq" path="res://Resources/Assets/real_estate.tres" id="5_ymaim"]
+
+[resource]
+script = ExtResource("2_s8ho3")
+assets = Array[ExtResource("1_hcp0a")]([ExtResource("2_incy7"), ExtResource("3_op51l"), ExtResource("4_uidgd"), ExtResource("5_ymaim")])

@@ -14,6 +14,7 @@ var _settings: AppSettings
 var session_mode: int = SessionMode.NONE
 var run_state: Object = null
 var _run_counter: int = 0
+var current_year_index: int = 0
 var current_year_scenario: YearScenario = null
 var scenario_config: ScenarioGeneratorConfig = null
 var run_seed: int = 0
@@ -76,6 +77,7 @@ func start_new_run(chosen_asset_ids: Array[String]) -> bool:
 	state.chosen_asset_ids = chosen_asset_ids.duplicate()
 	state.reset_history()
 	run_state = state
+	current_year_index = 0
 	run_seed = abs(hash(state.run_id))
 	current_year_scenario = null
 	if _settings:
@@ -221,6 +223,7 @@ func _reset_run_tracking() -> void:
 	run_state = null
 	current_year_scenario = null
 	run_seed = 0
+	current_year_index = 0
 
 
 func _load_or_init_settings() -> void:
@@ -347,6 +350,23 @@ func debug_validate_data_resources() -> void:
 		print("DataCheck: %s|%s low=%s high=%s" % [sample.asset, sample.indicator, low, high])
 
 
+func advance_year() -> bool:
+	_ensure_settings_loaded()
+	if session_mode != SessionMode.RUN:
+		push_warning("GameManager: advance_year called when session_mode is not RUN.")
+		return false
+	var time_horizon := _settings.time_horizon if _settings else 0
+	if current_year_index + 1 >= time_horizon:
+		print("GameManager: end of run reached (year %s)" % current_year_index)
+		return false
+	current_year_index += 1
+	if run_state != null:
+		run_state.current_year_index = current_year_index
+	prepare_next_year()
+	print("GameManager: advanced to year=%s" % current_year_index)
+	return true
+
+
 func prepare_next_year() -> void:
 	_ensure_settings_loaded()
 	if session_mode != SessionMode.RUN:
@@ -362,7 +382,7 @@ func prepare_next_year() -> void:
 	var settings := _settings
 	var difficulty := settings.difficulty if settings else "medium"
 	var time_horizon := settings.time_horizon if settings else 0
-	var year_index: int = run_state.current_year_index if run_state != null else 0
+	var year_index: int = current_year_index
 	var scenario := ScenarioGenerator.generate_year(
 		year_index,
 		current_year_scenario,
@@ -373,7 +393,9 @@ func prepare_next_year() -> void:
 		scenario_config
 	)
 	current_year_scenario = scenario
-	run_state.current_year_index = scenario.year_index
+	current_year_index = scenario.year_index
+	if run_state != null:
+		run_state.current_year_index = scenario.year_index
 	print("Scenario: year=%s indicators=%s levels=%s shocks=%s seed=%s" % [scenario.year_index, scenario.indicator_ids, scenario.indicator_levels, scenario.shocks_triggered, scenario.seed_used])
 
 

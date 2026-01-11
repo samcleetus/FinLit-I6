@@ -23,3 +23,15 @@ func _session_mode_to_string(mode: int) -> String:
 			return "NONE"
 		_:
 			return "UNKNOWN"
+
+
+func _on_next_year_button_pressed() -> void:
+	var advanced: bool = GameManager.advance_year()
+	if not advanced:
+		print("Match: cannot advance year (run complete)")
+		return
+	var scenario: YearScenario = GameManager.current_year_scenario
+	if scenario == null:
+		push_error("Match: expected scenario after advancing year but found none.")
+		return
+	print("Match: year=%s indicators=%s levels=%s" % [scenario.year_index, scenario.indicator_ids, scenario.indicator_levels])

@@ -14,6 +14,9 @@ var _settings: AppSettings
 var session_mode: int = SessionMode.NONE
 var run_state: Object = null
 var _run_counter: int = 0
+var current_year_scenario: YearScenario = null
+var scenario_config: ScenarioGeneratorConfig = null
+var run_seed: int = 0
 
 var _scene_paths := {
 	SceneId.BOOT: "res://Scenes/Game/Boot.tscn",
@@ -31,6 +34,7 @@ func _ready() -> void:
 	print("GameManager: _ready called, loading AppSettings and initializing session mode to NONE")
 	_load_or_init_settings()
 	_reset_run_tracking()
+	_load_scenario_config()
 	debug_validate_data_resources()
 
 
@@ -72,9 +76,12 @@ func start_new_run(chosen_asset_ids: Array[String]) -> bool:
 	state.chosen_asset_ids = chosen_asset_ids.duplicate()
 	state.reset_history()
 	run_state = state
+	run_seed = abs(hash(state.run_id))
+	current_year_scenario = null
 	if _settings:
 		_settings.mode = "normal"
 	print("GameManager: start_new_run -> mode=%s run_id=%s chosen_assets=%s" % [_session_mode_to_string(session_mode), run_state.run_id, run_state.chosen_asset_ids])
+	prepare_next_year()
 	return true
 
 
@@ -212,6 +219,8 @@ func get_scene_path(scene_id: int) -> String:
 func _reset_run_tracking() -> void:
 	session_mode = SessionMode.NONE
 	run_state = null
+	current_year_scenario = null
+	run_seed = 0
 
 
 func _load_or_init_settings() -> void:
@@ -336,3 +345,57 @@ func debug_validate_data_resources() -> void:
 			low = behavior_matrix.get_effect(sample.asset, sample.indicator, false)
 			high = behavior_matrix.get_effect(sample.asset, sample.indicator, true)
 		print("DataCheck: %s|%s low=%s high=%s" % [sample.asset, sample.indicator, low, high])
+
+
+func prepare_next_year() -> void:
+	_ensure_settings_loaded()
+	if session_mode != SessionMode.RUN:
+		return
+	if run_state == null:
+		push_error("GameManager: prepare_next_year called without an active run_state.")
+		return
+	if scenario_config == null:
+		push_error("GameManager: ScenarioGeneratorConfig.tres missing; cannot generate scenarios.")
+		return
+
+	var available_indicator_ids := _get_available_indicator_ids()
+	var settings := _settings
+	var difficulty := settings.difficulty if settings else "medium"
+	var time_horizon := settings.time_horizon if settings else 0
+	var year_index: int = run_state.current_year_index if run_state != null else 0
+	var scenario := ScenarioGenerator.generate_year(
+		year_index,
+		current_year_scenario,
+		run_seed,
+		difficulty,
+		time_horizon,
+		available_indicator_ids,
+		scenario_config
+	)
+	current_year_scenario = scenario
+	run_state.current_year_index = scenario.year_index
+	print("Scenario: year=%s indicators=%s levels=%s shocks=%s seed=%s" % [scenario.year_index, scenario.indicator_ids, scenario.indicator_levels, scenario.shocks_triggered, scenario.seed_used])
+
+
+func _load_scenario_config() -> void:
+	var path := "res://Resources/ScenarioGeneratorConfig.tres"
+	scenario_config = load(path)
+	if scenario_config == null:
+		push_error("GameManager: failed to load ScenarioGeneratorConfig at %s" % path)
+
+
+func _get_available_indicator_ids() -> Array[String]:
+	var ids: Array[String] = []
+	var indicator_path := "res://Resources/IndicatorDB.tres"
+	var indicator_db := load(indicator_path)
+	if indicator_db == null:
+		push_error("GameManager: failed to load IndicatorDB at %s" % indicator_path)
+		return ids
+	if not indicator_db.has_method("get_all"):
+		push_error("GameManager: IndicatorDB at %s is missing get_all()" % indicator_path)
+		return ids
+	for indicator in indicator_db.get_all():
+		if indicator == null or indicator.id == "":
+			continue
+		ids.append(indicator.id)
+	return ids

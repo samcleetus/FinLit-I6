@@ -44,7 +44,13 @@ func _init_start_button() -> void:
 func _init_slots() -> void:
 	slot_nodes.clear()
 	var nodes := get_tree().get_nodes_in_group("SelectedAssets")
-	nodes.sort_custom(func(a, b): return a.name < b.name)
+	nodes.sort_custom(func(a, b):
+		if a == null or b == null:
+			return false
+		if a.global_position.x == b.global_position.x:
+			return a.global_position.y < b.global_position.y
+		return a.global_position.x < b.global_position.x
+	)
 	for node in nodes:
 		if node == null:
 			continue

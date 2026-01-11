@@ -1,19 +1,18 @@
 extends Node
 
 const AppSettingsResource = preload("res://Scripts/Data/AppSettings.gd")
+const RunStateResource = preload("res://Scripts/Data/RunState.gd")
 const PersistenceUtil = preload("res://Scripts/Systems/Persistence.gd")
 
 @warning_ignore("unused_signal")
 signal settings_changed(settings)
 
-enum RunState { IDLE, IN_RUN, ENDED }
-enum RunMode { PRACTICE, STANDARD }
+enum SessionMode { NONE, RUN, PRACTICE }
 enum SceneId { BOOT, MAIN_MENU, SETTINGS, PROFILE, START_RUN, START_PRACTICE, MATCH, COLLECTION }
 
 var _settings: AppSettings
-var current_run_state: int = RunState.IDLE
-var current_run_mode: int = RunMode.STANDARD
-var current_run_id: String = ""
+var session_mode: int = SessionMode.NONE
+var run_state: Object = null
 var _run_counter: int = 0
 
 var _scene_paths := {
@@ -29,7 +28,7 @@ var _scene_paths := {
 
 
 func _ready() -> void:
-	print("GameManager: _ready called, loading AppSettings and initializing run state to IDLE")
+	print("GameManager: _ready called, loading AppSettings and initializing session mode to NONE")
 	_load_or_init_settings()
 	_reset_run_tracking()
 	debug_validate_data_resources()
@@ -64,23 +63,27 @@ func set_difficulty(value) -> void:
 	_persist_settings()
 
 
-func start_new_run() -> bool:
+func start_new_run(chosen_asset_ids: Array[String]) -> bool:
 	_run_counter += 1
-	current_run_id = "run_%s" % _run_counter
-	current_run_mode = RunMode.STANDARD
-	current_run_state = RunState.IN_RUN
-	print("GameManager: start_new_run called -> mode=STANDARD state=IN_RUN run_id=%s" % current_run_id)
+	session_mode = SessionMode.RUN
+	var state: Object = RunStateResource.new()
+	state.run_id = _generate_run_id("run")
+	state.current_year_index = 0
+	state.chosen_asset_ids = chosen_asset_ids.duplicate()
+	state.reset_history()
+	run_state = state
 	if _settings:
 		_settings.mode = "normal"
+	print("GameManager: start_new_run -> mode=%s run_id=%s chosen_assets=%s" % [_session_mode_to_string(session_mode), run_state.run_id, run_state.chosen_asset_ids])
 	return true
 
 
 func start_practice(params: Dictionary = {}) -> bool:
 	_run_counter += 1
-	current_run_id = "practice_%s" % _run_counter
-	current_run_mode = RunMode.PRACTICE
-	current_run_state = RunState.IN_RUN
-	print("GameManager: start_practice called with params %s -> mode=PRACTICE state=IN_RUN run_id=%s" % [params, current_run_id])
+	session_mode = SessionMode.PRACTICE
+	run_state = null
+	var practice_id := _generate_run_id("practice")
+	print("GameManager: start_practice called with params %s -> mode=%s run_id=%s (practice flow not yet implemented)" % [params, _session_mode_to_string(session_mode), practice_id])
 	if _settings:
 		_settings.mode = "practice"
 		if params.has("time_horizon"):
@@ -91,22 +94,23 @@ func start_practice(params: Dictionary = {}) -> bool:
 
 
 func reset_run() -> void:
-	print("GameManager: reset_run called -> clearing run and returning to IDLE")
+	print("GameManager: reset_run called -> clearing run state and session mode")
 	_reset_run_tracking()
 
 
-func get_run_state() -> int:
-	print("GameManager: get_run_state called -> %s" % _state_to_string(current_run_state))
-	return current_run_state
+func get_session_mode() -> int:
+	print("GameManager: get_session_mode called -> %s" % _session_mode_to_string(session_mode))
+	return session_mode
 
 
-func get_run_mode() -> int:
-	print("GameManager: get_run_mode called -> %s" % _mode_to_string(current_run_mode))
-	return current_run_mode
+func get_run_state() -> Object:
+	var id_text: String = run_state.run_id if run_state else "null"
+	print("GameManager: get_run_state called -> session_mode=%s run_id=%s" % [_session_mode_to_string(session_mode), id_text])
+	return run_state
 
 
 func is_run_active() -> bool:
-	var active := current_run_state == RunState.IN_RUN
+	var active := session_mode == SessionMode.RUN and run_state != null
 	print("GameManager: is_run_active called -> %s" % active)
 	return active
 
@@ -120,9 +124,8 @@ func get_profile_summary() -> Dictionary:
 		"mode": _settings.mode,
 		"difficulty": _settings.difficulty,
 		"time_horizon": _settings.time_horizon,
-		"run_state": _state_to_string(current_run_state),
-		"run_mode": _mode_to_string(current_run_mode),
-		"run_id": current_run_id,
+		"session_mode": _session_mode_to_string(session_mode),
+		"run_id": run_state.run_id if run_state else "",
 		"runs_completed": 0,
 	}
 
@@ -207,9 +210,8 @@ func get_scene_path(scene_id: int) -> String:
 
 
 func _reset_run_tracking() -> void:
-	current_run_state = RunState.IDLE
-	current_run_mode = RunMode.STANDARD
-	current_run_id = ""
+	session_mode = SessionMode.NONE
+	run_state = null
 
 
 func _load_or_init_settings() -> void:
@@ -256,24 +258,19 @@ func _parse_int_value(value) -> int:
 	return 0
 
 
-func _state_to_string(value: int) -> String:
-	match value:
-		RunState.IDLE:
-			return "IDLE"
-		RunState.IN_RUN:
-			return "IN_RUN"
-		RunState.ENDED:
-			return "ENDED"
-		_:
-			return "UNKNOWN"
+func _generate_run_id(prefix: String) -> String:
+	var timestamp := Time.get_unix_time_from_system()
+	return "%s_%s_%s" % [prefix, _run_counter, timestamp]
 
 
-func _mode_to_string(value: int) -> String:
+func _session_mode_to_string(value: int) -> String:
 	match value:
-		RunMode.PRACTICE:
+		SessionMode.NONE:
+			return "NONE"
+		SessionMode.RUN:
+			return "RUN"
+		SessionMode.PRACTICE:
 			return "PRACTICE"
-		RunMode.STANDARD:
-			return "STANDARD"
 		_:
 			return "UNKNOWN"
 

@@ -2,6 +2,7 @@ extends Control
 
 const AssetCardScenePath := "res://Scenes/UI/AssetCard.tscn"
 const AssetDBPath := "res://Resources/AssetDB.tres"
+const GRID_ICON_SCALE := 1.2
 
 var selected_asset_ids: Array[String] = []
 var slot_nodes: Array[Node] = []
@@ -76,13 +77,19 @@ func _populate_grid() -> void:
 	for asset in asset_db.get_all():
 		if asset == null or asset.id == "":
 			continue
+		if not asset.starting_unlocked:
+			continue
 		asset_by_id[asset.id] = asset
 		var card_instance := card_scene.instantiate()
 		_asset_grid.add_child(card_instance)
 		if card_instance.has_method("apply_asset"):
 			card_instance.apply_asset(asset)
+		if card_instance.has_method("set_value_visible"):
+			card_instance.set_value_visible(false)
+		if card_instance.has_method("set_icon_scale"):
+			card_instance.set_icon_scale(GRID_ICON_SCALE)
 		if card_instance.has_method("set_interactable"):
-			card_instance.set_interactable(asset.starting_unlocked)
+			card_instance.set_interactable(true)
 		if card_instance.has_method("set_selected"):
 			card_instance.set_selected(false)
 		card_instance.pressed.connect(func(id: String) -> void: _on_grid_card_pressed(id))
@@ -144,7 +151,9 @@ func _refresh_slots() -> void:
 			var asset = asset_by_id.get(asset_id, null)
 			if asset and slot.has_method("apply_asset"):
 				slot.apply_asset(asset)
-			if slot and slot.has_method("set_selected"):
+			if slot.has_method("set_value_visible"):
+				slot.set_value_visible(false)
+			if slot.has_method("set_selected"):
 				slot.set_selected(true)
 			_disable_slot_interaction(slot)
 		else:
@@ -156,6 +165,8 @@ func _clear_slot_card(slot: Node) -> void:
 		return
 	if slot.has_method("clear_asset"):
 		slot.clear_asset()
+	if slot.has_method("set_value_visible"):
+		slot.set_value_visible(false)
 	if slot.has_method("set_selected"):
 		slot.set_selected(false)
 	_disable_slot_interaction(slot)

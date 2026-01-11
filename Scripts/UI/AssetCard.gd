@@ -9,6 +9,7 @@ var _hit_button: Button
 var _name_label: Label
 var _image: TextureRect
 var _value_label: Label
+var _base_image_scale: Vector2 = Vector2.ONE
 
 
 func _ready() -> void:
@@ -16,6 +17,8 @@ func _ready() -> void:
 	_name_label = get_node_or_null("AssetVBox/AssetNameLabel")
 	_image = get_node_or_null("AssetVBox/AssetImage")
 	_value_label = get_node_or_null("AssetVBox/AssetValueLabel")
+	if _image:
+		_base_image_scale = _image.scale
 	if _hit_button:
 		_hit_button.disabled = false
 		_hit_button.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -57,7 +60,17 @@ func set_selected(is_selected: bool) -> void:
 func set_interactable(is_enabled: bool) -> void:
 	if _hit_button:
 		_hit_button.disabled = not is_enabled
-	self.modulate = Color(1, 1, 1, 1) if is_enabled else Color(0.7, 0.7, 0.7, 0.9)
+		_hit_button.mouse_filter = Control.MOUSE_FILTER_STOP if is_enabled else Control.MOUSE_FILTER_IGNORE
+
+
+func set_value_visible(visible_enabled: bool) -> void:
+	if _value_label:
+		_value_label.visible = visible_enabled
+
+
+func set_icon_scale(scale_factor: float) -> void:
+	if _image:
+		_image.scale = _base_image_scale * scale_factor
 
 
 func _on_pressed() -> void:

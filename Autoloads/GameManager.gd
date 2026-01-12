@@ -3,7 +3,7 @@ extends Node
 const AppSettingsResource = preload("res://Scripts/Data/AppSettings.gd")
 const RunStateResource = preload("res://Scripts/Data/RunState.gd")
 const PersistenceUtil = preload("res://Scripts/Systems/Persistence.gd")
-const MonthResolver = preload("res://Scripts/Game/MonthResolver.gd")
+const MonthResolverUtil = preload("res://Scripts/Game/MonthResolver.gd")
 const IndicatorDBPath := "res://Resources/IndicatorDB.tres"
 const AssetDBPath := "res://Resources/AssetDB.tres"
 const BehaviorMatrixPath := "res://Resources/BehaviorMatrix.tres"
@@ -248,12 +248,13 @@ func _apply_month_step() -> bool:
 
 	_ensure_behavior_matrix_loaded()
 
-	var resolver_result := MonthResolver.resolve_month_step(
+	var resolver_result := MonthResolverUtil.resolve_month_step(
 		_behavior_matrix,
 		current_year_scenario,
 		state.allocated_by_asset,
 		state.unallocated_funds,
-		state.current_month
+		state.current_month,
+		run_seed
 	)
 
 	var new_allocated: Dictionary = resolver_result.get("new_allocated_by_asset", state.allocated_by_asset) if typeof(resolver_result.get("new_allocated_by_asset", state.allocated_by_asset)) == TYPE_DICTIONARY else state.allocated_by_asset

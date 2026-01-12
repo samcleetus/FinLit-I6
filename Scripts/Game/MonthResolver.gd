@@ -5,12 +5,21 @@ const EFFECT_POINT_RATE := 0.005
 const DEFAULT_LEVEL := 1
 
 
+static func get_deterministic_rng(run_seed: int, year: int, month: int, asset_id: String) -> RandomNumberGenerator:
+	var combined_text := "%s_%s_%s_%s" % [run_seed, year, month, asset_id]
+	var seed_value: int = abs(hash(combined_text))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+	return rng
+
+
 static func resolve_month_step(
 	behavior_matrix: BehaviorMatrix,
 	scenario,
 	allocated_by_asset: Dictionary,
 	unallocated_funds: int,
-	month_step: int = -1
+	month_step: int = -1,
+	run_seed: int = 0
 	) -> Dictionary:
 	
 	if allocated_by_asset == null or typeof(allocated_by_asset) != TYPE_DICTIONARY:
@@ -42,6 +51,9 @@ static func resolve_month_step(
 	var new_allocated: Dictionary = {}
 	var breakdown: Dictionary = {}
 	var behavior_available := behavior_matrix != null
+	var year_index: int = 0
+	if scenario != null and "year_index" in scenario:
+		year_index = int(scenario.year_index)
 
 	for asset_id in allocated_by_asset.keys():
 		var invested := int(allocated_by_asset.get(asset_id, 0))
@@ -51,6 +63,11 @@ static func resolve_month_step(
 			if behavior_available:
 				points_sum += behavior_matrix.get_effect_points(asset_id, indicator_id, level)
 		var monthly_return := float(points_sum) * EFFECT_POINT_RATE
+		if points_sum == 0:
+			var rng := get_deterministic_rng(run_seed, year_index, month_step, asset_id)
+			monthly_return = rng.randf_range(-0.005, 0.005)
+			var noise_pct := monthly_return * 100.0
+			print("Resolver: noise applied asset=%s points=0 noise_return=%+.3f%%" % [asset_id, noise_pct])
 		var new_invested := int(round(invested * (1.0 + monthly_return)))
 		if new_invested < 0:
 			new_invested = 0

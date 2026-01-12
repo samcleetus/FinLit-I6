@@ -273,12 +273,8 @@ func go_to(scene_id: int) -> void:
 	if tree == null:
 		print("GameManager: get_tree() was null, cannot change scene")
 		return
-	var err := tree.change_scene_to_file(scene_path)
-	if err == ERR_BUSY:
-		print("GameManager: change_scene_to_file busy, deferring -> scene_id=%s path=%s" % [_scene_to_string(scene_id), scene_path])
-		tree.call_deferred("change_scene_to_file", scene_path)
-	elif err != OK:
-		print("GameManager: go_to failed -> scene_id=%s path=%s err=%s" % [_scene_to_string(scene_id), scene_path, err])
+	# Defer the scene change to avoid ERR_BUSY when called during node tree edits (e.g. from _ready).
+	tree.call_deferred("change_scene_to_file", scene_path)
 
 
 func go_to_main_menu() -> void:

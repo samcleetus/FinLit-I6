@@ -154,12 +154,12 @@ func _update_start_button_state() -> void:
 
 
 func _log_selection() -> void:
-	print("StartRun: selected=%s" % selected_asset_ids)
+	print("StartRun: selected=%s" % [selected_asset_ids])
 
 
 func _on_start_pressed() -> void:
 	var chosen_ids: Array[String] = selected_asset_ids.duplicate()
-	print("StartRun: start pressed with assets=%s" % chosen_ids)
+	print("StartRun: start pressed with assets=%s" % [chosen_ids])
 	var started := GameManager.start_new_run(chosen_ids)
 	print("StartRun: sent assets to GameManager -> started=%s" % started)
 	if started:

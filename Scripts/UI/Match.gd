@@ -23,6 +23,7 @@ var _match_locked: bool = false
 var _end_match_overlay: Control = null
 var _overlay_main_menu_button: Button = null
 var _overlay_next_year_button: Button = null
+var _allocate_prompt: Control = null
 
 
 func _ready() -> void:
@@ -37,6 +38,7 @@ func _ready() -> void:
 	_cache_month_nodes()
 	_connect_month_timer()
 	_cache_end_match_overlay()
+	_cache_allocate_prompt()
 	_initialize_month_ui()
 	var vm := GameManager.get_match_view_model()
 	_render_from_view_model(vm)
@@ -268,6 +270,10 @@ func _cache_top_labels() -> void:
 func _cache_month_nodes() -> void:
 	_month_progress = get_node_or_null("LabelVBox/MonthHBox/MonthProgressBar") as ProgressBar
 	_month_timer = get_node_or_null("MonthTimer") as Timer
+
+
+func _cache_allocate_prompt() -> void:
+	_allocate_prompt = get_node_or_null("AllocateToBeginContainer") as Control
 
 
 func _cache_end_match_overlay() -> void:
@@ -554,6 +560,8 @@ func _start_month_timer_if_needed() -> void:
 	_month_timer.start()
 	if _month_progress:
 		_month_progress.value = 0
+	if _allocate_prompt:
+		_allocate_prompt.visible = false
 	print("Match: month timer started (wait_time=%s)" % _month_timer.wait_time)
 
 

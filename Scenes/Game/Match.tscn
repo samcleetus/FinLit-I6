@@ -88,7 +88,7 @@ horizontal_alignment = 1
 [node name="Arena" type="Control" parent="."]
 layout_mode = 1
 anchor_left = 0.05
-anchor_top = 0.24
+anchor_top = 0.21
 anchor_right = 0.95
 anchor_bottom = 0.95
 grow_horizontal = 2
@@ -104,19 +104,19 @@ grow_vertical = 2
 
 [node name="AnimalAsset1" parent="Arena" groups=["AnimalAssets"] instance=ExtResource("1_jmgjt")]
 layout_mode = 1
-offset_left = -443.0
-offset_top = -587.54
-offset_right = -193.0
-offset_bottom = -237.54
-scale = Vector2(1.5, 1.5)
+offset_left = -458.0
+offset_top = -678.56
+offset_right = -208.0
+offset_bottom = -328.56
+scale = Vector2(1.6, 1.6)
 
 [node name="AnimalAsset2" parent="Arena" groups=["AnimalAssets"] instance=ExtResource("1_jmgjt")]
 layout_mode = 1
-offset_left = 78.0
-offset_top = -476.54
-offset_right = 328.0
-offset_bottom = -126.54
-scale = Vector2(1.5, 1.5)
+offset_left = 71.0
+offset_top = -545.56
+offset_right = 321.0
+offset_bottom = -195.56
+scale = Vector2(1.6, 1.6)
 
 [node name="AnimalAsset3" parent="Arena" groups=["AnimalAssets"] instance=ExtResource("1_jmgjt")]
 layout_mode = 1
@@ -124,7 +124,7 @@ offset_left = -443.0
 offset_top = 125.46
 offset_right = -193.0
 offset_bottom = 475.46
-scale = Vector2(1.5, 1.5)
+scale = Vector2(1.6, 1.6)
 
 [node name="AnimalAsset4" parent="Arena" groups=["AnimalAssets"] instance=ExtResource("1_jmgjt")]
 layout_mode = 1
@@ -132,7 +132,7 @@ offset_left = 79.0
 offset_top = 245.46
 offset_right = 329.0
 offset_bottom = 595.46
-scale = Vector2(1.5, 1.5)
+scale = Vector2(1.6, 1.6)
 
 [node name="MonthTimer" type="Timer" parent="."]
 wait_time = 4.0
@@ -141,9 +141,9 @@ wait_time = 4.0
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.2
-anchor_top = 0.25
+anchor_top = 0.21
 anchor_right = 0.8
-anchor_bottom = 0.3
+anchor_bottom = 0.25
 offset_left = -20.0
 offset_top = -20.0
 offset_right = 20.0

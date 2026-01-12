@@ -3,8 +3,11 @@ extends Node
 const AppSettingsResource = preload("res://Scripts/Data/AppSettings.gd")
 const RunStateResource = preload("res://Scripts/Data/RunState.gd")
 const PersistenceUtil = preload("res://Scripts/Systems/Persistence.gd")
+const MonthResolver = preload("res://Scripts/Game/MonthResolver.gd")
 const IndicatorDBPath := "res://Resources/IndicatorDB.tres"
 const AssetDBPath := "res://Resources/AssetDB.tres"
+const BehaviorMatrixPath := "res://Resources/BehaviorMatrix.tres"
+const MONTHS_PER_YEAR := 12
 const DEFAULT_TOTAL_FUNDS := 10000
 
 @warning_ignore("unused_signal")
@@ -22,6 +25,7 @@ var current_year_scenario: YearScenario = null
 var scenario_config: ScenarioGeneratorConfig = null
 var run_seed: int = 0
 var tap_amount: int = 1000
+var _behavior_matrix: BehaviorMatrix = null
 
 var _scene_paths := {
 	SceneId.BOOT: "res://Scenes/Game/Boot.tscn",
@@ -79,9 +83,11 @@ func start_new_run(chosen_asset_ids: Array[String]) -> bool:
 	state.run_id = _generate_run_id("run")
 	state.current_year_index = 0
 	state.current_month = 0
+	state.match_started = false
 	state.chosen_asset_ids = chosen_asset_ids.duplicate()
 	state.reset_history()
 	state.total_funds = DEFAULT_TOTAL_FUNDS
+	state.total_value = state.total_funds
 	state.unallocated_funds = state.total_funds
 	state.allocated_by_asset = {}
 	for asset_id in state.chosen_asset_ids:
@@ -146,6 +152,17 @@ func get_allocated_for(asset_id: String) -> int:
 	return int(state.allocated_by_asset.get(asset_id, 0))
 
 
+func get_total_value() -> int:
+	var state := run_state as RunState
+	if state == null:
+		return 0
+	if state.total_value == null:
+		var computed := _compute_total_value(state)
+		state.total_value = computed
+		return computed
+	return int(state.total_value)
+
+
 func get_month() -> int:
 	var state := run_state as RunState
 	if state == null:
@@ -154,16 +171,7 @@ func get_month() -> int:
 
 
 func advance_month() -> bool:
-	if session_mode != SessionMode.RUN or run_state == null:
-		return false
-	var state := run_state as RunState
-	if state == null:
-		return false
-	if state.current_month >= 11:
-		return false
-	state.current_month += 1
-	print("GameManager: advanced to month=%d" % state.current_month)
-	return true
+	return _apply_month_step()
 
 
 func allocate_to_asset(asset_id: String, amount: int) -> bool:
@@ -186,6 +194,8 @@ func allocate_to_asset(asset_id: String, amount: int) -> bool:
 	var previous := int(state.allocated_by_asset.get(asset_id, 0))
 	state.unallocated_funds -= clamped_amount
 	state.allocated_by_asset[asset_id] = previous + clamped_amount
+	state.match_started = true
+	state.total_value = _compute_total_value(state)
 	print("GameManager: allocated $%d to %s (unallocated=$%d)" % [clamped_amount, asset_id, state.unallocated_funds])
 	return true
 
@@ -214,7 +224,50 @@ func reallocate(from_asset_id: String, to_asset_id: String, amount: int) -> bool
 		return false
 	state.allocated_by_asset[from_asset_id] = from_current - move_amount
 	state.allocated_by_asset[to_asset_id] = to_current + move_amount
+	state.total_value = _compute_total_value(state)
 	print("GameManager: reallocated $%d from %s to %s" % [move_amount, from_asset_id, to_asset_id])
+	return true
+
+
+func _apply_month_step() -> bool:
+	if session_mode != SessionMode.RUN or run_state == null:
+		return false
+	var state := run_state as RunState
+	if state == null:
+		return false
+	if state.current_month >= MONTHS_PER_YEAR:
+		return false
+	if not _has_match_started(state):
+		return false
+
+	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
+		state.allocated_by_asset = {}
+
+	if current_year_scenario == null:
+		push_warning("GameManager: month step running without a current_year_scenario; skipping scenario effects.")
+
+	_ensure_behavior_matrix_loaded()
+
+	var resolver_result := MonthResolver.resolve_month_step(
+		_behavior_matrix,
+		current_year_scenario,
+		state.allocated_by_asset,
+		state.unallocated_funds,
+		state.current_month
+	)
+
+	var new_allocated: Dictionary = resolver_result.get("new_allocated_by_asset", state.allocated_by_asset) if typeof(resolver_result.get("new_allocated_by_asset", state.allocated_by_asset)) == TYPE_DICTIONARY else state.allocated_by_asset
+	if typeof(new_allocated) != TYPE_DICTIONARY:
+		new_allocated = state.allocated_by_asset
+	state.allocated_by_asset = new_allocated
+
+	var new_total_value: int = int(resolver_result.get("total_value", state.total_value if state.total_value != null else 0))
+	if typeof(resolver_result.get("total_value", null)) == TYPE_NIL or (typeof(resolver_result.get("total_value", null)) != TYPE_INT and typeof(resolver_result.get("total_value", null)) != TYPE_FLOAT):
+		new_total_value = _compute_total_value(state, new_allocated, state.unallocated_funds)
+	state.total_value = new_total_value
+
+	state.current_month += 1
+	print("GameManager: month advanced -> %d total=%d unallocated=%d" % [state.current_month, state.total_value, state.unallocated_funds])
 	return true
 
 
@@ -430,7 +483,7 @@ func debug_validate_data_resources() -> void:
 	print("DataCheck: starting")
 	var asset_path := "res://Resources/AssetDB.tres"
 	var indicator_path := "res://Resources/IndicatorDB.tres"
-	var behavior_path := "res://Resources/BehaviorMatrix.tres"
+	var behavior_path := BehaviorMatrixPath
 
 	var asset_db := load(asset_path)
 	if asset_db == null:
@@ -494,6 +547,8 @@ func prepare_next_year() -> void:
 	if scenario_config == null:
 		push_error("GameManager: ScenarioGeneratorConfig.tres missing; cannot generate scenarios.")
 		return
+
+	run_state.current_month = 0
 
 	var available_indicator_ids := _get_available_indicator_ids()
 	var settings := _settings
@@ -628,3 +683,49 @@ func _rand_between_values(a: float, b: float, seed_value: int) -> float:
 	if is_equal_approx(min_value, max_value):
 		return min_value
 	return rng.randf_range(min_value, max_value)
+
+
+func _has_match_started(state: RunState) -> bool:
+	if state == null:
+		return false
+	var started: bool = state.match_started
+	var reduced_unallocated := int(state.unallocated_funds) < int(state.total_funds)
+	var allocated_any := false
+	if state.allocated_by_asset != null and typeof(state.allocated_by_asset) == TYPE_DICTIONARY:
+		for value in state.allocated_by_asset.values():
+			if int(value) > 0:
+				allocated_any = true
+				break
+	if (allocated_any or reduced_unallocated) and not started:
+		started = true
+		state.match_started = true
+	return started
+
+
+func _compute_total_value(state: RunState, allocations: Variant = null, unallocated_override: Variant = null) -> int:
+	if state == null:
+		return 0
+	var allocation_dict: Dictionary = {}
+	if allocations != null and typeof(allocations) == TYPE_DICTIONARY:
+		allocation_dict = allocations
+	elif state.allocated_by_asset != null and typeof(state.allocated_by_asset) == TYPE_DICTIONARY:
+		allocation_dict = state.allocated_by_asset
+
+	var unallocated_value := int(unallocated_override) if unallocated_override != null else int(state.unallocated_funds)
+	var total := unallocated_value
+	for value in allocation_dict.values():
+		total += int(value)
+	return int(total)
+
+
+func _ensure_behavior_matrix_loaded() -> void:
+	if _behavior_matrix != null:
+		return
+	var loaded := load(BehaviorMatrixPath)
+	if loaded == null or not (loaded is BehaviorMatrix):
+		push_warning("GameManager: failed to load BehaviorMatrix at %s" % BehaviorMatrixPath)
+		_behavior_matrix = null
+		return
+	_behavior_matrix = loaded
+	if _behavior_matrix.has_method("rebuild_index"):
+		_behavior_matrix.rebuild_index()

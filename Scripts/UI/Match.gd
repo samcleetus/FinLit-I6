@@ -14,6 +14,7 @@ var _pointer_down_asset_id: String = ""
 var _pointer_down_pos: Vector2 = Vector2.ZERO
 var _dragging: bool = false
 var _drag_consumed: bool = false
+var _total_value_label: Label = null
 var _unallocated_label: Label = null
 var _month_label: Label = null
 var _month_progress: ProgressBar = null
@@ -161,6 +162,9 @@ func _refresh_allocation_labels() -> void:
 		var allocated: int = GameManager.get_allocated_for(asset_id)
 		value_label.text = "$%d" % allocated
 		log_values.append("%s=$%d" % [asset_id, allocated])
+	if _total_value_label:
+		var total_value: int = GameManager.get_total_value()
+		_total_value_label.text = "Total Value: $%d" % total_value
 	if _unallocated_label:
 		var unallocated: int = GameManager.get_unallocated_funds()
 		_unallocated_label.text = "Unallocated Funds: $%d" % unallocated
@@ -263,6 +267,7 @@ func _cache_indicator_nodes() -> void:
 
 
 func _cache_top_labels() -> void:
+	_total_value_label = get_node_or_null("LabelVBox/TotalValueLabel") as Label
 	_unallocated_label = get_node_or_null("LabelVBox/UnallocatedLabel") as Label
 	_month_label = get_node_or_null("LabelVBox/MonthHBox/MonthLabel") as Label
 
@@ -579,7 +584,7 @@ func _on_month_timer_timeout() -> void:
 	if not ok:
 		end_match()
 		return
-	_update_month_label()
+	_refresh_allocation_labels()
 	if _month_progress:
 		_month_progress.value = 0
 	print("Match: month -> %d" % GameManager.get_month())

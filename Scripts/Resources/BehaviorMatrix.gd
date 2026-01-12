@@ -34,10 +34,29 @@ func get_rule(asset_id: String, indicator_id: String) -> BehaviorRule:
 
 
 func get_effect(asset_id: String, indicator_id: String, is_high: bool) -> int:
-	var rule := get_rule(asset_id, indicator_id)
+	var rule := get_rule_for(asset_id, indicator_id)
 	if rule == null:
 		return 0
 	return rule.high_effect if is_high else rule.low_effect
+
+
+func get_rule_for(asset_id: String, indicator_id: String) -> BehaviorRule:
+	if asset_id == "" or indicator_id == "":
+		return null
+	return get_rule(asset_id, indicator_id)
+
+
+func get_effect_points(asset_id: String, indicator_id: String, level: int) -> int:
+	var rule := get_rule_for(asset_id, indicator_id)
+	if rule == null:
+		return 0
+	match level:
+		0:
+			return rule.low_effect
+		2:
+			return rule.high_effect
+		_:
+			return int(round((rule.low_effect + rule.high_effect) / 2.0))
 
 
 func _make_key(asset_id: String, indicator_id: String) -> String:

@@ -13,7 +13,9 @@ config_version=5
 config/name="FinLit I6"
 run/main_scene="res://Scenes/Game/Boot.tscn"
 config/features=PackedStringArray("4.3", "Mobile")
-config/icon="res://Assets/Images/icon.svg"
+boot_splash/bg_color=Color(0.176471, 0.25098, 0.352941, 1)
+boot_splash/image="res://Assets/Icons/bootsplash.png"
+config/icon="res://Assets/Icons/temp_icon.png"
 
 [autoload]
 
@@ -29,3 +31,4 @@ window/handheld/orientation=1
 [rendering]
 
 renderer/rendering_method="mobile"
+textures/vram_compression/import_etc2_astc=true

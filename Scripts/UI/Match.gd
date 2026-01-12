@@ -19,6 +19,10 @@ var _month_label: Label = null
 var _month_progress: ProgressBar = null
 var _month_timer: Timer = null
 var _month_timer_started: bool = false
+var _match_locked: bool = false
+var _end_match_overlay: Control = null
+var _overlay_main_menu_button: Button = null
+var _overlay_next_year_button: Button = null
 
 
 func _ready() -> void:
@@ -32,6 +36,7 @@ func _ready() -> void:
 	_cache_asset_slots()
 	_cache_month_nodes()
 	_connect_month_timer()
+	_cache_end_match_overlay()
 	_initialize_month_ui()
 	var vm := GameManager.get_match_view_model()
 	_render_from_view_model(vm)
@@ -52,6 +57,8 @@ func _session_mode_to_string(mode: int) -> String:
 
 
 func _on_asset_pressed(asset_id: String) -> void:
+	if _match_locked:
+		return
 	if asset_id == "":
 		print("Match: asset pressed with empty asset id")
 		return
@@ -60,6 +67,8 @@ func _on_asset_pressed(asset_id: String) -> void:
 
 
 func _start_pointer_cycle(asset_id: String, global_pos: Vector2) -> void:
+	if _match_locked:
+		return
 	_pointer_down_asset_id = asset_id
 	_pointer_down_pos = global_pos
 	_dragging = false
@@ -67,6 +76,8 @@ func _start_pointer_cycle(asset_id: String, global_pos: Vector2) -> void:
 
 
 func _update_drag_state(global_pos: Vector2) -> void:
+	if _match_locked:
+		return
 	if _pointer_down_asset_id == "":
 		return
 	if _dragging:
@@ -78,6 +89,8 @@ func _update_drag_state(global_pos: Vector2) -> void:
 
 
 func _finish_pointer_cycle(asset_id: String, global_pos: Vector2) -> void:
+	if _match_locked:
+		return
 	var from_asset_id := _pointer_down_asset_id
 	var log_id := from_asset_id if from_asset_id != "" else asset_id
 	var was_drag := _dragging
@@ -168,6 +181,8 @@ func _event_to_global(event: InputEvent, asset_node: Control) -> Vector2:
 
 
 func _process(_delta: float) -> void:
+	if _match_locked:
+		return
 	if _month_timer_started and _month_timer and not _month_timer.is_stopped():
 		var wait_time := _month_timer.wait_time
 		if wait_time > 0:
@@ -255,6 +270,20 @@ func _cache_month_nodes() -> void:
 	_month_timer = get_node_or_null("MonthTimer") as Timer
 
 
+func _cache_end_match_overlay() -> void:
+	_end_match_overlay = get_node_or_null("EndMatchOverlay") as Control
+	if _end_match_overlay:
+		_end_match_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+		_overlay_main_menu_button = _end_match_overlay.get_node_or_null("Card/StatsVBox/ButtonsRow/MainMenuButton") as Button
+		_overlay_next_year_button = _end_match_overlay.get_node_or_null("Card/StatsVBox/ButtonsRow/NextYearButton") as Button
+		if _overlay_next_year_button == null:
+			_overlay_next_year_button = _end_match_overlay.get_node_or_null("Card/StatsVBox/ButtonsRow/NexYearButton") as Button
+		if _overlay_main_menu_button and not _overlay_main_menu_button.pressed.is_connected(Callable(self, "_on_overlay_main_menu_pressed")):
+			_overlay_main_menu_button.pressed.connect(Callable(self, "_on_overlay_main_menu_pressed"))
+		if _overlay_next_year_button and not _overlay_next_year_button.pressed.is_connected(Callable(self, "_on_overlay_next_year_pressed")):
+			_overlay_next_year_button.pressed.connect(Callable(self, "_on_overlay_next_year_pressed"))
+
+
 func _connect_month_timer() -> void:
 	if _month_timer == null:
 		return
@@ -268,6 +297,25 @@ func _initialize_month_ui() -> void:
 		_month_progress.max_value = 1
 		_month_progress.value = 0
 	_update_month_label()
+
+
+func end_match() -> void:
+	if _match_locked:
+		return
+	_match_locked = true
+	print("Match: end_match -> showing overlay")
+	_pointer_down_asset_id = ""
+	_dragging = false
+	_drag_consumed = false
+	if _month_timer:
+		_month_timer.stop()
+	_month_timer_started = false
+	if _month_progress:
+		_month_progress.value = 0
+	if _end_match_overlay:
+		_end_match_overlay.visible = true
+	else:
+		push_error("Match: EndMatchOverlay node missing; cannot display overlay.")
 
 
 func _cache_asset_slots() -> void:
@@ -317,6 +365,8 @@ func _cache_asset_slots() -> void:
 
 
 func _on_asset_gui_input(event: InputEvent, asset_node: Control) -> void:
+	if _match_locked:
+		return
 	if asset_node == null:
 		return
 	var asset_id := _get_asset_id(asset_node)
@@ -496,6 +546,8 @@ func _render_assets_from_view_model(vm: MatchViewModel) -> void:
 func _start_month_timer_if_needed() -> void:
 	if _month_timer == null:
 		return
+	if _match_locked:
+		return
 	if _month_timer_started:
 		return
 	_month_timer_started = true
@@ -513,15 +565,24 @@ func _update_month_label() -> void:
 
 
 func _on_month_timer_timeout() -> void:
+	if _match_locked:
+		return
 	var ok: bool = GameManager.advance_month()
 	if not ok:
-		if _month_timer:
-			_month_timer.stop()
-		if _month_progress:
-			_month_progress.value = 0
-		print("Match: year complete (12 months)")
+		end_match()
 		return
 	_update_month_label()
 	if _month_progress:
 		_month_progress.value = 0
 	print("Match: month -> %d" % GameManager.get_month())
+
+
+func _on_overlay_main_menu_pressed() -> void:
+	print("EndMatchOverlay: main menu pressed")
+	GameManager.go_to_main_menu()
+
+
+func _on_overlay_next_year_pressed() -> void:
+	print("EndMatchOverlay: next year pressed")
+	GameManager.advance_year()
+	GameManager.go_to_start_run()

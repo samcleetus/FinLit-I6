@@ -1,7 +1,8 @@
-[gd_scene load_steps=5 format=3 uid="uid://lbc58g6lne8g"]
+[gd_scene load_steps=6 format=3 uid="uid://lbc58g6lne8g"]
 
 [ext_resource type="PackedScene" uid="uid://bhmdobeuhceae" path="res://Scenes/UI/AssetCard.tscn" id="1_jmgjt"]
 [ext_resource type="Script" path="res://Scripts/UI/Match.gd" id="1_l0fja"]
+[ext_resource type="PackedScene" uid="uid://bpgcr756l6cp8" path="res://Scenes/UI/EndMatchOverlay.tscn" id="3_n0vqm"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8fgj2"]
 bg_color = Color(2.94801e-07, 0.146215, 0.199828, 1)
@@ -156,7 +157,12 @@ theme_override_font_sizes/font_size = 50
 text = "Allocate to Begin!"
 horizontal_alignment = 1
 
+[node name="EndMatchOverlay" parent="." instance=ExtResource("3_n0vqm")]
+visible = false
+layout_mode = 1
+
 [node name="NextYearButton" type="Button" parent="."]
+visible = false
 layout_mode = 0
 offset_left = 83.0
 offset_top = 2287.0

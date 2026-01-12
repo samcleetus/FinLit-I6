@@ -15,6 +15,7 @@ func _ready() -> void:
 	_cache_indicator_nodes()
 	var vm := GameManager.get_match_view_model()
 	_render_from_view_model(vm)
+	_render_assets_from_view_model(vm)
 
 
 func _session_mode_to_string(mode: int) -> String:
@@ -36,6 +37,7 @@ func _on_next_year_button_pressed() -> void:
 		return
 	var vm := GameManager.get_match_view_model()
 	_render_from_view_model(vm)
+	_render_assets_from_view_model(vm)
 
 
 func _render_current_scenario() -> void:
@@ -152,3 +154,57 @@ func _render_from_view_model(vm: MatchViewModel) -> void:
 		rendered += 1
 
 	print("Match: rendered indicators %s" % rendered)
+
+
+func _render_assets_from_view_model(vm: MatchViewModel) -> void:
+	if vm == null:
+		push_error("Match: view model is null; cannot render assets.")
+		return
+	if vm.asset_slots.size() < 4:
+		push_warning("Match: asset slots missing entries; expected 4, got %d." % vm.asset_slots.size())
+
+	var applied := 0
+	for slot_vm in vm.asset_slots:
+		if slot_vm == null:
+			continue
+		var node_path := _asset_node_path_for_index(slot_vm.slot_index)
+		if node_path == "":
+			push_warning("Match: unknown asset slot index %d." % slot_vm.slot_index)
+			continue
+		var asset_node := get_node_or_null(node_path)
+		if asset_node == null:
+			push_warning("Match: missing asset node at path %s." % node_path)
+			continue
+		var asset_image := asset_node.get_node_or_null("AssetImage")
+		if asset_image == null:
+			asset_image = asset_node.get_node_or_null("AssetVBox/AssetImage")
+		if asset_image == null:
+			push_warning("Match: missing AssetImage under %s." % node_path)
+			continue
+		if slot_vm.icon == null:
+			push_warning("Match: asset slot %d missing icon for asset '%s'." % [slot_vm.slot_index, slot_vm.asset_id])
+			continue
+		if asset_image.has_method("set_texture"):
+			asset_image.set_texture(slot_vm.icon)
+			applied += 1
+		elif asset_image is TextureRect or asset_image is Sprite2D:
+			asset_image.texture = slot_vm.icon
+			applied += 1
+		else:
+			push_warning("Match: AssetImage under %s does not support texture assignment." % node_path)
+
+	print("Match: rendered assets %d" % applied)
+
+
+func _asset_node_path_for_index(slot_index: int) -> String:
+	match slot_index:
+		1:
+			return "Arena/AnimalAsset1"
+		2:
+			return "Arena/AnimalAsset2"
+		3:
+			return "Arena/AnimalAsset3"
+		4:
+			return "Arena/AnimalAsset4"
+		_:
+			return ""

@@ -13,9 +13,8 @@ func _ready() -> void:
 	var run_id: String = state.run_id if state else "none"
 	print("Match: _ready -> session_mode=%s run_id=%s" % [_session_mode_to_string(mode), run_id])
 	_cache_indicator_nodes()
-	_load_indicator_db()
-	_render_current_scenario()
-	GameManager.get_match_view_model()
+	var vm := GameManager.get_match_view_model()
+	_render_from_view_model(vm)
 
 
 func _session_mode_to_string(mode: int) -> String:
@@ -35,7 +34,8 @@ func _on_next_year_button_pressed() -> void:
 	if not advanced:
 		print("Match: cannot advance year (run complete)")
 		return
-	_render_current_scenario()
+	var vm := GameManager.get_match_view_model()
+	_render_from_view_model(vm)
 
 
 func _render_current_scenario() -> void:
@@ -122,3 +122,33 @@ func _level_to_value(level: int, indicator: Indicator) -> float:
 			return (mid + high) * 0.5
 		_:
 			return mid
+
+
+func _render_from_view_model(vm: MatchViewModel) -> void:
+	if vm == null:
+		push_error("Match: view model is null.")
+		return
+	if _indicator_flow == null or _indicator_template == null:
+		push_error("Match: indicator container/template missing.")
+		return
+
+	_indicator_template.visible = false
+	_clear_indicator_panels()
+
+	var rendered := 0
+	for indicator_vm in vm.indicators:
+		if indicator_vm == null:
+			continue
+		var panel := _indicator_template.duplicate()
+		panel.visible = true
+		panel.name = "IndicatorPanel_%s" % indicator_vm.indicator_id
+		_indicator_flow.add_child(panel)
+		var label := panel.get_node_or_null("IndicatorLabel") as Label
+		if label:
+			var text := indicator_vm.value_text
+			if text == "" and indicator_vm.display_name != "":
+				text = indicator_vm.display_name
+			label.text = text
+		rendered += 1
+
+	print("Match: rendered indicators %s" % rendered)

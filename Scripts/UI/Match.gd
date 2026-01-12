@@ -14,6 +14,7 @@ var _pointer_down_asset_id: String = ""
 var _pointer_down_pos: Vector2 = Vector2.ZERO
 var _dragging: bool = false
 var _drag_consumed: bool = false
+var _unallocated_label: Label = null
 
 
 func _ready() -> void:
@@ -22,10 +23,12 @@ func _ready() -> void:
 	var run_id: String = state.run_id if state else "none"
 	print("Match: _ready -> session_mode=%s run_id=%s" % [_session_mode_to_string(mode), run_id])
 	_cache_indicator_nodes()
+	_cache_top_labels()
 	_cache_asset_slots()
 	var vm := GameManager.get_match_view_model()
 	_render_from_view_model(vm)
 	_apply_assets_to_fixed_slots(vm)
+	_refresh_allocation_labels()
 
 
 func _session_mode_to_string(mode: int) -> String:
@@ -86,13 +89,15 @@ func _finish_pointer_cycle(asset_id: String, global_pos: Vector2) -> void:
 		var target_asset_id := _find_asset_under_position(global_pos)
 		if target_asset_id != "" and target_asset_id != from_asset_id:
 			print("Match: drag drop -> %s -> %s" % [from_asset_id, target_asset_id])
-			GameManager.reallocate(from_asset_id, target_asset_id, REALLOC_AMOUNT)
+			if GameManager.reallocate(from_asset_id, target_asset_id, REALLOC_AMOUNT):
+				_refresh_allocation_labels()
 		else:
 			print("Match: drag cancel")
 		return
 
 	print("Match: tap allocate -> %s" % from_asset_id)
-	GameManager.allocate_to_asset(from_asset_id, ALLOC_AMOUNT)
+	if GameManager.allocate_to_asset(from_asset_id, ALLOC_AMOUNT):
+		_refresh_allocation_labels()
 
 
 func _find_asset_under_position(global_pos: Vector2) -> String:
@@ -118,6 +123,26 @@ func _get_asset_id(asset_node: Node) -> String:
 	return "" if raw_id == null else str(raw_id)
 
 
+func _refresh_allocation_labels() -> void:
+	_cache_asset_slots()
+	var log_values: Array = []
+	for slot_data in _asset_slots:
+		var asset_node: Node = slot_data.get("node")
+		var value_label: Label = slot_data.get("value_label")
+		if asset_node == null or value_label == null:
+			continue
+		var asset_id := _get_asset_id(asset_node)
+		if asset_id == "":
+			continue
+		var allocated: int = GameManager.get_allocated_for(asset_id)
+		value_label.text = "$%d" % allocated
+		log_values.append("%s=$%d" % [asset_id, allocated])
+	if _unallocated_label:
+		var unallocated: int = GameManager.get_unallocated_funds()
+		_unallocated_label.text = "Unallocated Funds: $%d" % unallocated
+	print("Match: updated value labels %s" % ", ".join(log_values))
+
+
 func _event_to_global(event: InputEvent, asset_node: Control) -> Vector2:
 	if event is InputEventScreenTouch:
 		return (event as InputEventScreenTouch).position
@@ -140,6 +165,7 @@ func _on_next_year_button_pressed() -> void:
 	var vm := GameManager.get_match_view_model()
 	_render_from_view_model(vm)
 	_apply_assets_to_fixed_slots(vm)
+	_refresh_allocation_labels()
 
 
 func _render_current_scenario() -> void:
@@ -195,6 +221,10 @@ func _cache_indicator_nodes() -> void:
 		push_error("Match: missing IndicatorPanel template.")
 		return
 	_indicator_template.visible = false
+
+
+func _cache_top_labels() -> void:
+	_unallocated_label = get_node_or_null("LabelVBox/UnallocatedLabel") as Label
 
 
 func _cache_asset_slots() -> void:
@@ -413,6 +443,7 @@ func _apply_assets_to_fixed_slots(vm: MatchViewModel) -> void:
 			asset_node.call("set_selected", false)
 
 	print("Match: rendered assets %d" % applied)
+	_refresh_allocation_labels()
 
 
 func _render_assets_from_view_model(vm: MatchViewModel) -> void:

@@ -127,6 +127,24 @@ func get_run_state() -> Object:
 	return run_state
 
 
+func get_unallocated_funds() -> int:
+	var state := run_state as RunState
+	if state == null or state.unallocated_funds == null:
+		return 0
+	return int(state.unallocated_funds)
+
+
+func get_allocated_for(asset_id: String) -> int:
+	if asset_id == "":
+		return 0
+	var state := run_state as RunState
+	if state == null:
+		return 0
+	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
+		return 0
+	return int(state.allocated_by_asset.get(asset_id, 0))
+
+
 func allocate_to_asset(asset_id: String, amount: int) -> bool:
 	if session_mode != SessionMode.RUN or run_state == null:
 		print("GameManager: allocate_to_asset skipped (no active run)")

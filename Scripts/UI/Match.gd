@@ -1,12 +1,19 @@
 extends Control
 
 const IndicatorDBPath := "res://Resources/IndicatorDB.tres"
+const DRAG_THRESHOLD_PX := 12
+const REALLOC_AMOUNT := 1000
+const ALLOC_AMOUNT := 1000
 
 var _indicator_flow: Node = null
 var _indicator_template: Control = null
 var _indicator_db: IndicatorDB = null
 var _asset_slots: Array = []
 var _asset_signals_connected: bool = false
+var _pointer_down_asset_id: String = ""
+var _pointer_down_pos: Vector2 = Vector2.ZERO
+var _dragging: bool = false
+var _drag_consumed: bool = false
 
 
 func _ready() -> void:
@@ -37,8 +44,92 @@ func _on_asset_pressed(asset_id: String) -> void:
 	if asset_id == "":
 		print("Match: asset pressed with empty asset id")
 		return
-	print("Match: asset pressed -> %s" % asset_id)
-	GameManager.allocate_to_asset(asset_id, GameManager.tap_amount)
+	print("Match: tap allocate -> %s" % asset_id)
+	GameManager.allocate_to_asset(asset_id, ALLOC_AMOUNT)
+
+
+func _start_pointer_cycle(asset_id: String, global_pos: Vector2) -> void:
+	_pointer_down_asset_id = asset_id
+	_pointer_down_pos = global_pos
+	_dragging = false
+	_drag_consumed = false
+
+
+func _update_drag_state(global_pos: Vector2) -> void:
+	if _pointer_down_asset_id == "":
+		return
+	if _dragging:
+		return
+	if _pointer_down_pos.distance_to(global_pos) > DRAG_THRESHOLD_PX:
+		_dragging = true
+		_drag_consumed = true
+		print("Match: drag start -> %s" % _pointer_down_asset_id)
+
+
+func _finish_pointer_cycle(asset_id: String, global_pos: Vector2) -> void:
+	var from_asset_id := _pointer_down_asset_id
+	var log_id := from_asset_id if from_asset_id != "" else asset_id
+	var was_drag := _dragging
+	print("Match: input up received for %s dragging=%s" % [log_id, was_drag])
+	if from_asset_id == "":
+		_pointer_down_asset_id = ""
+		_pointer_down_pos = Vector2.ZERO
+		_dragging = false
+		_drag_consumed = false
+		return
+	_pointer_down_asset_id = ""
+	_pointer_down_pos = Vector2.ZERO
+	_dragging = false
+	_drag_consumed = false
+
+	if was_drag:
+		var target_asset_id := _find_asset_under_position(global_pos)
+		if target_asset_id != "" and target_asset_id != from_asset_id:
+			print("Match: drag drop -> %s -> %s" % [from_asset_id, target_asset_id])
+			GameManager.reallocate(from_asset_id, target_asset_id, REALLOC_AMOUNT)
+		else:
+			print("Match: drag cancel")
+		return
+
+	print("Match: tap allocate -> %s" % from_asset_id)
+	GameManager.allocate_to_asset(from_asset_id, ALLOC_AMOUNT)
+
+
+func _find_asset_under_position(global_pos: Vector2) -> String:
+	_cache_asset_slots()
+	for slot_data in _asset_slots:
+		var hit_control: Control = slot_data.get("button")
+		if hit_control == null:
+			hit_control = slot_data.get("node")
+		if hit_control == null:
+			continue
+		var rect := hit_control.get_global_rect()
+		if rect.has_point(global_pos):
+			var asset_id := _get_asset_id(slot_data.get("node"))
+			if asset_id != "":
+				return asset_id
+	return ""
+
+
+func _get_asset_id(asset_node: Node) -> String:
+	if asset_node == null:
+		return ""
+	var raw_id = asset_node.get("asset_id")
+	return "" if raw_id == null else str(raw_id)
+
+
+func _event_to_global(event: InputEvent, asset_node: Control) -> Vector2:
+	if event is InputEventScreenTouch:
+		return (event as InputEventScreenTouch).position
+	if event is InputEventScreenDrag:
+		return (event as InputEventScreenDrag).position
+	if event is InputEventMouse:
+		return (event as InputEventMouse).global_position
+	if "global_position" in event:
+		return event.global_position
+	if "position" in event and asset_node != null:
+		return asset_node.get_global_transform_with_canvas() * event.position
+	return Vector2.ZERO
 
 
 func _on_next_year_button_pressed() -> void:
@@ -152,6 +243,45 @@ func _cache_asset_slots() -> void:
 	_connect_asset_slot_signals()
 
 
+func _on_asset_gui_input(event: InputEvent, asset_node: Control) -> void:
+	if asset_node == null:
+		return
+	var asset_id := _get_asset_id(asset_node)
+	if asset_id == "":
+		return
+
+	if event is InputEventMouseButton:
+		var mouse_event := event as InputEventMouseButton
+		if mouse_event.button_index != MOUSE_BUTTON_LEFT:
+			return
+		if mouse_event.pressed:
+			_start_pointer_cycle(asset_id, _event_to_global(mouse_event, asset_node))
+		else:
+			_finish_pointer_cycle(asset_id, _event_to_global(mouse_event, asset_node))
+		return
+
+	if event is InputEventScreenTouch:
+		var touch_event := event as InputEventScreenTouch
+		if touch_event.pressed:
+			_start_pointer_cycle(asset_id, _event_to_global(touch_event, asset_node))
+		else:
+			_finish_pointer_cycle(asset_id, _event_to_global(touch_event, asset_node))
+		return
+
+	if event is InputEventMouseMotion:
+		if _pointer_down_asset_id == "":
+			return
+		var motion_event := event as InputEventMouseMotion
+		if (motion_event.button_mask & MOUSE_BUTTON_MASK_LEFT) == 0:
+			return
+		_update_drag_state(_event_to_global(motion_event, asset_node))
+		return
+
+	if event is InputEventScreenDrag:
+		var drag_event := event as InputEventScreenDrag
+		_update_drag_state(_event_to_global(drag_event, asset_node))
+
+
 func _connect_asset_slot_signals() -> void:
 	if _asset_signals_connected:
 		return
@@ -160,18 +290,18 @@ func _connect_asset_slot_signals() -> void:
 		var hit_button: Button = slot_data.get("button")
 		if asset_node == null or hit_button == null:
 			continue
-		var callable := Callable(self, "_handle_asset_button_pressed").bind(asset_node)
-		if not hit_button.pressed.is_connected(callable):
-			hit_button.pressed.connect(callable)
+		var press_callable := Callable(self, "_handle_asset_button_pressed").bind(asset_node)
+		if not hit_button.pressed.is_connected(press_callable):
+			hit_button.pressed.connect(press_callable)
+		var gui_callable := Callable(self, "_on_asset_gui_input").bind(asset_node)
+		if not hit_button.gui_input.is_connected(gui_callable):
+			hit_button.gui_input.connect(gui_callable)
 	_asset_signals_connected = true
 
 
-func _handle_asset_button_pressed(asset_node: Node) -> void:
-	if asset_node == null:
-		return
-	var raw_id = asset_node.get("asset_id")
-	var asset_id := "" if raw_id == null else str(raw_id)
-	_on_asset_pressed(asset_id)
+func _handle_asset_button_pressed(_asset_node: Node) -> void:
+	# Pressed connections are retained but input handling is done via gui_input.
+	return
 
 
 func _load_indicator_db() -> void:

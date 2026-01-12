@@ -151,6 +151,34 @@ func allocate_to_asset(asset_id: String, amount: int) -> bool:
 	return true
 
 
+func reallocate(from_asset_id: String, to_asset_id: String, amount: int) -> bool:
+	if session_mode != SessionMode.RUN or run_state == null:
+		print("GameManager: reallocate skipped (no active run)")
+		return false
+	if from_asset_id == "" or to_asset_id == "" or from_asset_id == to_asset_id:
+		print("GameManager: reallocate skipped (invalid asset ids)")
+		return false
+	if amount <= 0:
+		print("GameManager: reallocate skipped (non-positive amount %d)" % amount)
+		return false
+	var state := run_state as RunState
+	if state == null:
+		print("GameManager: reallocate skipped (run_state missing)")
+		return false
+	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
+		state.allocated_by_asset = {}
+	var from_current := int(state.allocated_by_asset.get(from_asset_id, 0))
+	var to_current := int(state.allocated_by_asset.get(to_asset_id, 0))
+	var move_amount: int = min(amount, from_current)
+	if move_amount <= 0:
+		print("GameManager: reallocate skipped (nothing available to move from %s)" % from_asset_id)
+		return false
+	state.allocated_by_asset[from_asset_id] = from_current - move_amount
+	state.allocated_by_asset[to_asset_id] = to_current + move_amount
+	print("GameManager: reallocated $%d from %s to %s" % [move_amount, from_asset_id, to_asset_id])
+	return true
+
+
 func get_match_view_model() -> MatchViewModel:
 	_ensure_settings_loaded()
 	var vm := MatchViewModel.new()

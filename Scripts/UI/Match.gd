@@ -15,6 +15,10 @@ var _pointer_down_pos: Vector2 = Vector2.ZERO
 var _dragging: bool = false
 var _drag_consumed: bool = false
 var _unallocated_label: Label = null
+var _month_label: Label = null
+var _month_progress: ProgressBar = null
+var _month_timer: Timer = null
+var _month_timer_started: bool = false
 
 
 func _ready() -> void:
@@ -22,9 +26,13 @@ func _ready() -> void:
 	var state: RunState = GameManager.get_run_state()
 	var run_id: String = state.run_id if state else "none"
 	print("Match: _ready -> session_mode=%s run_id=%s" % [_session_mode_to_string(mode), run_id])
+	set_process(true)
 	_cache_indicator_nodes()
 	_cache_top_labels()
 	_cache_asset_slots()
+	_cache_month_nodes()
+	_connect_month_timer()
+	_initialize_month_ui()
 	var vm := GameManager.get_match_view_model()
 	_render_from_view_model(vm)
 	_apply_assets_to_fixed_slots(vm)
@@ -98,6 +106,7 @@ func _finish_pointer_cycle(asset_id: String, global_pos: Vector2) -> void:
 	print("Match: tap allocate -> %s" % from_asset_id)
 	if GameManager.allocate_to_asset(from_asset_id, ALLOC_AMOUNT):
 		_refresh_allocation_labels()
+		_start_month_timer_if_needed()
 
 
 func _find_asset_under_position(global_pos: Vector2) -> String:
@@ -141,6 +150,7 @@ func _refresh_allocation_labels() -> void:
 		var unallocated: int = GameManager.get_unallocated_funds()
 		_unallocated_label.text = "Unallocated Funds: $%d" % unallocated
 	print("Match: updated value labels %s" % ", ".join(log_values))
+	_update_month_label()
 
 
 func _event_to_global(event: InputEvent, asset_node: Control) -> Vector2:
@@ -155,6 +165,18 @@ func _event_to_global(event: InputEvent, asset_node: Control) -> Vector2:
 	if "position" in event and asset_node != null:
 		return asset_node.get_global_transform_with_canvas() * event.position
 	return Vector2.ZERO
+
+
+func _process(_delta: float) -> void:
+	if _month_timer_started and _month_timer and not _month_timer.is_stopped():
+		var wait_time := _month_timer.wait_time
+		if wait_time > 0:
+			var progress := 1.0 - (_month_timer.time_left / wait_time)
+			if _month_progress:
+				_month_progress.value = clamp(progress, 0.0, 1.0)
+	else:
+		if not _month_timer_started and _month_progress:
+			_month_progress.value = 0
 
 
 func _on_next_year_button_pressed() -> void:
@@ -225,6 +247,27 @@ func _cache_indicator_nodes() -> void:
 
 func _cache_top_labels() -> void:
 	_unallocated_label = get_node_or_null("LabelVBox/UnallocatedLabel") as Label
+	_month_label = get_node_or_null("LabelVBox/MonthHBox/MonthLabel") as Label
+
+
+func _cache_month_nodes() -> void:
+	_month_progress = get_node_or_null("LabelVBox/MonthHBox/MonthProgressBar") as ProgressBar
+	_month_timer = get_node_or_null("MonthTimer") as Timer
+
+
+func _connect_month_timer() -> void:
+	if _month_timer == null:
+		return
+	if not _month_timer.timeout.is_connected(Callable(self, "_on_month_timer_timeout")):
+		_month_timer.timeout.connect(Callable(self, "_on_month_timer_timeout"))
+
+
+func _initialize_month_ui() -> void:
+	if _month_progress:
+		_month_progress.min_value = 0
+		_month_progress.max_value = 1
+		_month_progress.value = 0
+	_update_month_label()
 
 
 func _cache_asset_slots() -> void:
@@ -448,3 +491,37 @@ func _apply_assets_to_fixed_slots(vm: MatchViewModel) -> void:
 
 func _render_assets_from_view_model(vm: MatchViewModel) -> void:
 	_apply_assets_to_fixed_slots(vm)
+
+
+func _start_month_timer_if_needed() -> void:
+	if _month_timer == null:
+		return
+	if _month_timer_started:
+		return
+	_month_timer_started = true
+	_month_timer.start()
+	if _month_progress:
+		_month_progress.value = 0
+	print("Match: month timer started (wait_time=%s)" % _month_timer.wait_time)
+
+
+func _update_month_label() -> void:
+	if _month_label == null:
+		return
+	var month: int = GameManager.get_month()
+	_month_label.text = "Month: %d" % month
+
+
+func _on_month_timer_timeout() -> void:
+	var ok: bool = GameManager.advance_month()
+	if not ok:
+		if _month_timer:
+			_month_timer.stop()
+		if _month_progress:
+			_month_progress.value = 0
+		print("Match: year complete (12 months)")
+		return
+	_update_month_label()
+	if _month_progress:
+		_month_progress.value = 0
+	print("Match: month -> %d" % GameManager.get_month())

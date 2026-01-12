@@ -8,6 +8,7 @@ class_name RunState
 @export var total_funds: int = 10000
 @export var unallocated_funds: int = 10000
 @export var allocated_by_asset: Dictionary = {}
+@export var current_month: int = 0
 
 
 func reset_history() -> void:

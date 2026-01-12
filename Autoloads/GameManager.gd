@@ -78,6 +78,7 @@ func start_new_run(chosen_asset_ids: Array[String]) -> bool:
 	var state: Object = RunStateResource.new()
 	state.run_id = _generate_run_id("run")
 	state.current_year_index = 0
+	state.current_month = 0
 	state.chosen_asset_ids = chosen_asset_ids.duplicate()
 	state.reset_history()
 	state.total_funds = DEFAULT_TOTAL_FUNDS
@@ -143,6 +144,26 @@ func get_allocated_for(asset_id: String) -> int:
 	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
 		return 0
 	return int(state.allocated_by_asset.get(asset_id, 0))
+
+
+func get_month() -> int:
+	var state := run_state as RunState
+	if state == null:
+		return 0
+	return int(state.current_month)
+
+
+func advance_month() -> bool:
+	if session_mode != SessionMode.RUN or run_state == null:
+		return false
+	var state := run_state as RunState
+	if state == null:
+		return false
+	if state.current_month >= 11:
+		return false
+	state.current_month += 1
+	print("GameManager: advanced to month=%d" % state.current_month)
+	return true
 
 
 func allocate_to_asset(asset_id: String, amount: int) -> bool:

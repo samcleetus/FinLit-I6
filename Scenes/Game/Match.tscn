@@ -134,7 +134,7 @@ offset_bottom = 595.46
 scale = Vector2(1.5, 1.5)
 
 [node name="MonthTimer" type="Timer" parent="."]
-wait_time = 3.0
+wait_time = 4.0
 
 [node name="AllocateToBeginContainer" type="PanelContainer" parent="."]
 layout_mode = 1

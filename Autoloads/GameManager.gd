@@ -5,6 +5,7 @@ const RunStateResource = preload("res://Scripts/Data/RunState.gd")
 const PersistenceUtil = preload("res://Scripts/Systems/Persistence.gd")
 const IndicatorDBPath := "res://Resources/IndicatorDB.tres"
 const AssetDBPath := "res://Resources/AssetDB.tres"
+const DEFAULT_TOTAL_FUNDS := 10000
 
 @warning_ignore("unused_signal")
 signal settings_changed(settings)
@@ -20,6 +21,7 @@ var current_year_index: int = 0
 var current_year_scenario: YearScenario = null
 var scenario_config: ScenarioGeneratorConfig = null
 var run_seed: int = 0
+var tap_amount: int = 1000
 
 var _scene_paths := {
 	SceneId.BOOT: "res://Scenes/Game/Boot.tscn",
@@ -78,6 +80,11 @@ func start_new_run(chosen_asset_ids: Array[String]) -> bool:
 	state.current_year_index = 0
 	state.chosen_asset_ids = chosen_asset_ids.duplicate()
 	state.reset_history()
+	state.total_funds = DEFAULT_TOTAL_FUNDS
+	state.unallocated_funds = state.total_funds
+	state.allocated_by_asset = {}
+	for asset_id in state.chosen_asset_ids:
+		state.allocated_by_asset[asset_id] = 0
 	run_state = state
 	current_year_index = 0
 	run_seed = abs(hash(state.run_id))
@@ -118,6 +125,30 @@ func get_run_state() -> Object:
 	var id_text: String = run_state.run_id if run_state else "null"
 	print("GameManager: get_run_state called -> session_mode=%s run_id=%s" % [_session_mode_to_string(session_mode), id_text])
 	return run_state
+
+
+func allocate_to_asset(asset_id: String, amount: int) -> bool:
+	if session_mode != SessionMode.RUN or run_state == null:
+		print("GameManager: allocate_to_asset skipped (no active run)")
+		return false
+	if asset_id == "":
+		print("GameManager: allocate_to_asset skipped (empty asset id)")
+		return false
+	var state := run_state as RunState
+	if state == null:
+		print("GameManager: allocate_to_asset skipped (run_state missing)")
+		return false
+	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
+		state.allocated_by_asset = {}
+	var clamped_amount := clampi(amount, 0, state.unallocated_funds)
+	if clamped_amount <= 0:
+		print("GameManager: allocate_to_asset skipped (requested=%d, unallocated=%d)" % [amount, state.unallocated_funds])
+		return false
+	var previous := int(state.allocated_by_asset.get(asset_id, 0))
+	state.unallocated_funds -= clamped_amount
+	state.allocated_by_asset[asset_id] = previous + clamped_amount
+	print("GameManager: allocated $%d to %s (unallocated=$%d)" % [clamped_amount, asset_id, state.unallocated_funds])
+	return true
 
 
 func get_match_view_model() -> MatchViewModel:

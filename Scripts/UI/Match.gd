@@ -5,6 +5,8 @@ const IndicatorDBPath := "res://Resources/IndicatorDB.tres"
 var _indicator_flow: Node = null
 var _indicator_template: Control = null
 var _indicator_db: IndicatorDB = null
+var _asset_slots: Array = []
+var _asset_signals_connected: bool = false
 
 
 func _ready() -> void:
@@ -13,9 +15,10 @@ func _ready() -> void:
 	var run_id: String = state.run_id if state else "none"
 	print("Match: _ready -> session_mode=%s run_id=%s" % [_session_mode_to_string(mode), run_id])
 	_cache_indicator_nodes()
+	_cache_asset_slots()
 	var vm := GameManager.get_match_view_model()
 	_render_from_view_model(vm)
-	_render_assets_from_view_model(vm)
+	_apply_assets_to_fixed_slots(vm)
 
 
 func _session_mode_to_string(mode: int) -> String:
@@ -30,6 +33,14 @@ func _session_mode_to_string(mode: int) -> String:
 			return "UNKNOWN"
 
 
+func _on_asset_pressed(asset_id: String) -> void:
+	if asset_id == "":
+		print("Match: asset pressed with empty asset id")
+		return
+	print("Match: asset pressed -> %s" % asset_id)
+	GameManager.allocate_to_asset(asset_id, GameManager.tap_amount)
+
+
 func _on_next_year_button_pressed() -> void:
 	var advanced: bool = GameManager.advance_year()
 	if not advanced:
@@ -37,7 +48,7 @@ func _on_next_year_button_pressed() -> void:
 		return
 	var vm := GameManager.get_match_view_model()
 	_render_from_view_model(vm)
-	_render_assets_from_view_model(vm)
+	_apply_assets_to_fixed_slots(vm)
 
 
 func _render_current_scenario() -> void:
@@ -93,6 +104,74 @@ func _cache_indicator_nodes() -> void:
 		push_error("Match: missing IndicatorPanel template.")
 		return
 	_indicator_template.visible = false
+
+
+func _cache_asset_slots() -> void:
+	if not _asset_slots.is_empty():
+		_connect_asset_slot_signals()
+		return
+	var arena := get_node_or_null("Arena")
+	if arena == null:
+		push_error("Match: missing Arena node.")
+		return
+	var node_names := ["AnimalAsset1", "AnimalAsset2", "AnimalAsset3", "AnimalAsset4"]
+	for i in node_names.size():
+		var slot_index := i + 1
+		var asset_node := arena.get_node_or_null(node_names[i])
+		if asset_node == null:
+			push_warning("Match: missing asset node %s under Arena." % node_names[i])
+			_asset_slots.append({
+				"slot_index": slot_index,
+				"node": null,
+				"image": null,
+				"name_label": null,
+				"value_label": null,
+				"button": null,
+			})
+			continue
+		var asset_image := asset_node.get_node_or_null("AssetImage")
+		if asset_image == null:
+			asset_image = asset_node.get_node_or_null("AssetVBox/AssetImage")
+		var asset_name_label := asset_node.get_node_or_null("AssetNameLabel")
+		if asset_name_label == null:
+			asset_name_label = asset_node.get_node_or_null("AssetVBox/AssetNameLabel")
+		var asset_value_label := asset_node.get_node_or_null("AssetValueLabel")
+		if asset_value_label == null:
+			asset_value_label = asset_node.get_node_or_null("AssetVBox/AssetValueLabel")
+		var hit_button: Button = asset_node.get_node_or_null("HitButton")
+		if hit_button == null:
+			hit_button = asset_node.get_node_or_null("Button")
+		_asset_slots.append({
+			"slot_index": slot_index,
+			"node": asset_node,
+			"image": asset_image,
+			"name_label": asset_name_label,
+			"value_label": asset_value_label,
+			"button": hit_button,
+		})
+	_connect_asset_slot_signals()
+
+
+func _connect_asset_slot_signals() -> void:
+	if _asset_signals_connected:
+		return
+	for slot_data in _asset_slots:
+		var asset_node: Node = slot_data.get("node")
+		var hit_button: Button = slot_data.get("button")
+		if asset_node == null or hit_button == null:
+			continue
+		var callable := Callable(self, "_handle_asset_button_pressed").bind(asset_node)
+		if not hit_button.pressed.is_connected(callable):
+			hit_button.pressed.connect(callable)
+	_asset_signals_connected = true
+
+
+func _handle_asset_button_pressed(asset_node: Node) -> void:
+	if asset_node == null:
+		return
+	var raw_id = asset_node.get("asset_id")
+	var asset_id := "" if raw_id == null else str(raw_id)
+	_on_asset_pressed(asset_id)
 
 
 func _load_indicator_db() -> void:
@@ -156,9 +235,13 @@ func _render_from_view_model(vm: MatchViewModel) -> void:
 	print("Match: rendered indicators %s" % rendered)
 
 
-func _render_assets_from_view_model(vm: MatchViewModel) -> void:
+func _apply_assets_to_fixed_slots(vm: MatchViewModel) -> void:
 	if vm == null:
 		push_error("Match: view model is null; cannot render assets.")
+		return
+	_cache_asset_slots()
+	if _asset_slots.is_empty():
+		push_error("Match: asset slot cache is empty; cannot render assets.")
 		return
 	if vm.asset_slots.size() < 4:
 		push_warning("Match: asset slots missing entries; expected 4, got %d." % vm.asset_slots.size())
@@ -167,49 +250,40 @@ func _render_assets_from_view_model(vm: MatchViewModel) -> void:
 	for slot_vm in vm.asset_slots:
 		if slot_vm == null:
 			continue
-		var node_path := _asset_node_path_for_index(slot_vm.slot_index)
-		if node_path == "":
+		if slot_vm.slot_index <= 0:
+			push_warning("Match: invalid asset slot index %d." % slot_vm.slot_index)
+			continue
+		var slot_idx := slot_vm.slot_index - 1
+		if slot_idx >= _asset_slots.size():
 			push_warning("Match: unknown asset slot index %d." % slot_vm.slot_index)
 			continue
-		var asset_node := get_node_or_null(node_path)
+		var slot_data: Dictionary = _asset_slots[slot_idx]
+		var asset_node: Node = slot_data.get("node")
 		if asset_node == null:
-			push_warning("Match: missing asset node at path %s." % node_path)
+			push_warning("Match: missing asset node for slot %d." % slot_vm.slot_index)
 			continue
-		var asset_image := asset_node.get_node_or_null("AssetImage")
+		var asset_image: Variant = slot_data.get("image")
+		var asset_name_label: Variant = slot_data.get("name_label")
+		asset_node.set("asset_id", slot_vm.asset_id)
 		if asset_image == null:
-			asset_image = asset_node.get_node_or_null("AssetVBox/AssetImage")
-		var asset_name_label := asset_node.get_node_or_null("AssetNameLabel")
-		if asset_name_label == null:
-			asset_name_label = asset_node.get_node_or_null("AssetVBox/AssetNameLabel")
-		if asset_image == null:
-			push_warning("Match: missing AssetImage under %s." % node_path)
-			continue
-		if slot_vm.icon == null:
+			push_warning("Match: missing AssetImage under slot %d." % slot_vm.slot_index)
+		elif slot_vm.icon == null:
 			push_warning("Match: asset slot %d missing icon for asset '%s'." % [slot_vm.slot_index, slot_vm.asset_id])
-			continue
-		if asset_image.has_method("set_texture"):
+		elif asset_image.has_method("set_texture"):
 			asset_image.set_texture(slot_vm.icon)
 			applied += 1
 		elif asset_image is TextureRect or asset_image is Sprite2D:
 			asset_image.texture = slot_vm.icon
 			applied += 1
 		else:
-			push_warning("Match: AssetImage under %s does not support texture assignment." % node_path)
+			push_warning("Match: AssetImage for slot %d does not support texture assignment." % slot_vm.slot_index)
 		if asset_name_label is Label:
 			asset_name_label.text = slot_vm.display_name
+		if asset_node.has_method("set_selected"):
+			asset_node.call("set_selected", false)
 
 	print("Match: rendered assets %d" % applied)
 
 
-func _asset_node_path_for_index(slot_index: int) -> String:
-	match slot_index:
-		1:
-			return "Arena/AnimalAsset1"
-		2:
-			return "Arena/AnimalAsset2"
-		3:
-			return "Arena/AnimalAsset3"
-		4:
-			return "Arena/AnimalAsset4"
-		_:
-			return ""
+func _render_assets_from_view_model(vm: MatchViewModel) -> void:
+	_apply_assets_to_fixed_slots(vm)

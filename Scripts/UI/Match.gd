@@ -178,6 +178,9 @@ func _render_assets_from_view_model(vm: MatchViewModel) -> void:
 		var asset_image := asset_node.get_node_or_null("AssetImage")
 		if asset_image == null:
 			asset_image = asset_node.get_node_or_null("AssetVBox/AssetImage")
+		var asset_name_label := asset_node.get_node_or_null("AssetNameLabel")
+		if asset_name_label == null:
+			asset_name_label = asset_node.get_node_or_null("AssetVBox/AssetNameLabel")
 		if asset_image == null:
 			push_warning("Match: missing AssetImage under %s." % node_path)
 			continue
@@ -192,6 +195,8 @@ func _render_assets_from_view_model(vm: MatchViewModel) -> void:
 			applied += 1
 		else:
 			push_warning("Match: AssetImage under %s does not support texture assignment." % node_path)
+		if asset_name_label is Label:
+			asset_name_label.text = slot_vm.display_name
 
 	print("Match: rendered assets %d" % applied)
 

@@ -11,6 +11,7 @@ class_name RunState
 @export var allocated_by_asset: Dictionary = {}
 @export var current_month: int = 0
 @export var match_started: bool = false
+@export var current_indicator_levels: Dictionary = {}
 
 
 func reset_history() -> void:

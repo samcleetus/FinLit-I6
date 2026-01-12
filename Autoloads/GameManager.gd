@@ -248,13 +248,16 @@ func _apply_month_step() -> bool:
 
 	_ensure_behavior_matrix_loaded()
 
+	_apply_monthly_indicator_drift(state.current_month)
+
 	var resolver_result := MonthResolverUtil.resolve_month_step(
 		_behavior_matrix,
 		current_year_scenario,
 		state.allocated_by_asset,
 		state.unallocated_funds,
 		state.current_month,
-		run_seed
+		run_seed,
+		state.current_indicator_levels
 	)
 
 	var new_allocated: Dictionary = resolver_result.get("new_allocated_by_asset", state.allocated_by_asset) if typeof(resolver_result.get("new_allocated_by_asset", state.allocated_by_asset)) == TYPE_DICTIONARY else state.allocated_by_asset
@@ -569,6 +572,8 @@ func prepare_next_year() -> void:
 	current_year_index = scenario.year_index
 	if run_state != null:
 		run_state.current_year_index = scenario.year_index
+		run_state.current_indicator_levels = scenario.indicator_levels.duplicate(true)
+		print("ScenarioDrift: init year=%d current_levels=%s" % [scenario.year_index, run_state.current_indicator_levels])
 	print("Scenario: year=%s indicators=%s levels=%s shocks=%s seed=%s" % [scenario.year_index, scenario.indicator_ids, scenario.indicator_levels, scenario.shocks_triggered, scenario.seed_used])
 
 
@@ -614,7 +619,7 @@ func _build_indicator_view_models(scenario: YearScenario) -> Array[IndicatorView
 			push_warning("GameManager: indicator '%s' not found in IndicatorDB." % indicator_id)
 			continue
 
-		var level := scenario.get_level(indicator_id, ScenarioGenerator.LEVEL_MID)
+		var level := _get_current_indicator_level(indicator_id, scenario)
 		var indicator_seed := _make_indicator_seed(indicator_id)
 		var value: float = indicator.mid_value
 		if level == ScenarioGenerator.LEVEL_LOW:
@@ -666,6 +671,84 @@ func _build_asset_slot_view_models() -> Array[AssetSlotViewModel]:
 		slots.append(slot_view_model)
 
 	return slots
+
+
+func _apply_monthly_indicator_drift(month_index: int) -> void:
+	_ensure_settings_loaded()
+	if run_state == null or current_year_scenario == null:
+		return
+	var state := run_state as RunState
+	if state == null:
+		return
+	if state.current_indicator_levels == null or typeof(state.current_indicator_levels) != TYPE_DICTIONARY:
+		state.current_indicator_levels = {}
+	var indicator_ids: Array[String] = current_year_scenario.indicator_ids
+	var probs: Dictionary = _get_indicator_drift_probabilities()
+	var difficulty_text := _normalize_drift_difficulty()
+	for indicator_id in indicator_ids:
+		if indicator_id == "":
+			continue
+		var prev_level: int = _get_current_indicator_level(indicator_id, current_year_scenario)
+		var rng: RandomNumberGenerator = _make_indicator_month_rng(indicator_id, month_index)
+		var delta: int = _roll_indicator_drift_delta(probs, rng)
+		var new_level: int = int(clamp(prev_level + delta, ScenarioGenerator.LEVEL_LOW, ScenarioGenerator.LEVEL_HIGH))
+		state.current_indicator_levels[indicator_id] = new_level
+		if new_level != prev_level:
+			print("ScenarioDrift: year=%d month=%d indicator=%s %d -> %d difficulty=%s" % [current_year_index, month_index, indicator_id, prev_level, new_level, difficulty_text])
+
+
+func _get_current_indicator_level(indicator_id: String, scenario: YearScenario) -> int:
+	var state := run_state as RunState
+	if state != null and state.current_indicator_levels != null and typeof(state.current_indicator_levels) == TYPE_DICTIONARY and state.current_indicator_levels.has(indicator_id):
+		return int(state.current_indicator_levels[indicator_id])
+	if scenario != null and scenario.has_method("get_level"):
+		return scenario.get_level(indicator_id, ScenarioGenerator.LEVEL_MID)
+	return ScenarioGenerator.LEVEL_MID
+
+
+func _get_indicator_drift_probabilities() -> Dictionary:
+	var normalized := _normalize_drift_difficulty()
+	match normalized:
+		"easy":
+			return {"stay": 0.70, "down": 0.15, "up": 0.15}
+		"hard":
+			return {"stay": 0.40, "down": 0.30, "up": 0.30}
+		_:
+			return {"stay": 0.55, "down": 0.225, "up": 0.225}
+
+
+func _roll_indicator_drift_delta(probs: Dictionary, rng: RandomNumberGenerator) -> int:
+	var stay_prob: float = float(probs.get("stay", 0.0))
+	var down_prob: float = float(probs.get("down", 0.0))
+	var up_prob: float = float(probs.get("up", 0.0))
+	var roll: float = rng.randf()
+	if roll < stay_prob:
+		return 0
+	elif roll < stay_prob + down_prob:
+		return -1
+	elif roll < stay_prob + down_prob + up_prob:
+		return 1
+	return 0
+
+
+func _make_indicator_month_rng(indicator_id: String, month_index: int) -> RandomNumberGenerator:
+	var id_hash: int = hash(indicator_id)
+	var mixed: int = int((run_seed * 92821) ^ (current_year_index * 68917) ^ (month_index * 131071) ^ id_hash)
+	if mixed == 0:
+		mixed = id_hash ^ 54321
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = abs(mixed)
+	return rng
+
+
+func _normalize_drift_difficulty() -> String:
+	var diff_text: String = _settings.difficulty if _settings else "medium"
+	var normalized := diff_text.to_lower()
+	if normalized == "normal":
+		normalized = "medium"
+	if normalized != "easy" and normalized != "medium" and normalized != "hard":
+		return "medium"
+	return normalized
 
 
 func _make_indicator_seed(indicator_id: String) -> int:

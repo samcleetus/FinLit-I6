@@ -1,17 +1,18 @@
-[gd_scene load_steps=11 format=3 uid="uid://b1kp1dg4htqos"]
+[gd_scene load_steps=12 format=3 uid="uid://b1kp1dg4htqos"]
 
 [ext_resource type="Script" path="res://Scripts/UI/Settings.gd" id="1_c7155"]
 [ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_lx8ap"]
 [ext_resource type="Texture2D" uid="uid://bkufwj8ahoe4w" path="res://Assets/Images/UI/background.png" id="2_vcu7i"]
 [ext_resource type="Texture2D" uid="uid://cbb0hko5ah6ge" path="res://Assets/Images/UI/MainMenuButton.png" id="4_rn465"]
+[ext_resource type="Texture2D" uid="uid://bgvj1j6scj43j" path="res://Assets/Images/UI/SettingsButton.png" id="5_8dsvu"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_bwr45"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_gp4cd"]
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_7r4k3"]
-
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_54e3f"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_7r4k3"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_43d86"]
 
@@ -150,20 +151,20 @@ grow_vertical = 0
 theme_override_constants/separation = 40
 alignment = 1
 
-[node name="CollectionButton" type="Button" parent="ButtonsRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_styles/focus = SubResource("StyleBoxEmpty_7r4k3")
-icon = ExtResource("1_lx8ap")
-flat = true
-icon_alignment = 1
-expand_icon = true
-
 [node name="MainMenuButton" type="Button" parent="ButtonsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_54e3f")
 icon = ExtResource("4_rn465")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="CollectionButton" type="Button" parent="ButtonsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/focus = SubResource("StyleBoxEmpty_7r4k3")
+icon = ExtResource("1_lx8ap")
 flat = true
 icon_alignment = 1
 expand_icon = true
@@ -182,7 +183,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_x2p0a")
 disabled = true
-icon = ExtResource("1_lx8ap")
+icon = ExtResource("5_8dsvu")
 flat = true
 icon_alignment = 1
 expand_icon = true

@@ -1,18 +1,19 @@
-[gd_scene load_steps=10 format=3 uid="uid://ds3i0buprpqvs"]
+[gd_scene load_steps=11 format=3 uid="uid://ds3i0buprpqvs"]
 
 [ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_afu0a"]
 [ext_resource type="Script" path="res://Scripts/UI/MainMenu.gd" id="1_mwn2r"]
 [ext_resource type="Texture2D" uid="uid://bkufwj8ahoe4w" path="res://Assets/Images/UI/background.png" id="2_nmk72"]
 [ext_resource type="Texture2D" uid="uid://cbb0hko5ah6ge" path="res://Assets/Images/UI/MainMenuButton.png" id="4_sbmxj"]
+[ext_resource type="Texture2D" uid="uid://bgvj1j6scj43j" path="res://Assets/Images/UI/SettingsButton.png" id="5_ty0lx"]
 
 [sub_resource type="CanvasTexture" id="CanvasTexture_ni22l"]
 specular_color = Color(0.196078, 0.545098, 0.517647, 1)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_7glq7"]
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_par4t"]
-
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ni302"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_par4t"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_g3vjj"]
 
@@ -100,21 +101,21 @@ grow_vertical = 0
 theme_override_constants/separation = 40
 alignment = 1
 
-[node name="CollectionButton" type="Button" parent="ButtonsRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_styles/focus = SubResource("StyleBoxEmpty_par4t")
-icon = ExtResource("1_afu0a")
-flat = true
-icon_alignment = 1
-expand_icon = true
-
 [node name="MainMenuButton" type="Button" parent="ButtonsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_ni302")
 disabled = true
 icon = ExtResource("4_sbmxj")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="CollectionButton" type="Button" parent="ButtonsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/focus = SubResource("StyleBoxEmpty_par4t")
+icon = ExtResource("1_afu0a")
 flat = true
 icon_alignment = 1
 expand_icon = true
@@ -132,7 +133,7 @@ expand_icon = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_g3vjj")
-icon = ExtResource("1_afu0a")
+icon = ExtResource("5_ty0lx")
 flat = true
 icon_alignment = 1
 expand_icon = true

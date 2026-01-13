@@ -9,6 +9,7 @@ const AssetDBPath := "res://Resources/AssetDB.tres"
 const BehaviorMatrixPath := "res://Resources/BehaviorMatrix.tres"
 const MONTHS_PER_YEAR := 12
 const DEFAULT_TOTAL_FUNDS := 10000
+const ALLOCATION_STEP := 100
 
 @warning_ignore("unused_signal")
 signal settings_changed(settings)
@@ -24,7 +25,7 @@ var current_year_index: int = 0
 var current_year_scenario: YearScenario = null
 var scenario_config: ScenarioGeneratorConfig = null
 var run_seed: int = 0
-var tap_amount: int = 1000
+var tap_amount: int = ALLOCATION_STEP
 var _behavior_matrix: BehaviorMatrix = null
 
 var _scene_paths := {
@@ -187,16 +188,18 @@ func allocate_to_asset(asset_id: String, amount: int) -> bool:
 		return false
 	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
 		state.allocated_by_asset = {}
-	var clamped_amount := clampi(amount, 0, state.unallocated_funds)
-	if clamped_amount <= 0:
+	if amount <= 0:
+		print("GameManager: allocate_to_asset skipped (non-positive amount %d)" % amount)
+		return false
+	if state.unallocated_funds < amount:
 		print("GameManager: allocate_to_asset skipped (requested=%d, unallocated=%d)" % [amount, state.unallocated_funds])
 		return false
 	var previous := int(state.allocated_by_asset.get(asset_id, 0))
-	state.unallocated_funds -= clamped_amount
-	state.allocated_by_asset[asset_id] = previous + clamped_amount
+	state.unallocated_funds -= amount
+	state.allocated_by_asset[asset_id] = previous + amount
 	state.match_started = true
 	state.total_value = _compute_total_value(state)
-	print("GameManager: allocated $%d to %s (unallocated=$%d)" % [clamped_amount, asset_id, state.unallocated_funds])
+	print("GameManager: allocated $%d to %s (unallocated=$%d)" % [amount, asset_id, state.unallocated_funds])
 	return true
 
 
@@ -218,14 +221,13 @@ func reallocate(from_asset_id: String, to_asset_id: String, amount: int) -> bool
 		state.allocated_by_asset = {}
 	var from_current := int(state.allocated_by_asset.get(from_asset_id, 0))
 	var to_current := int(state.allocated_by_asset.get(to_asset_id, 0))
-	var move_amount: int = min(amount, from_current)
-	if move_amount <= 0:
-		print("GameManager: reallocate skipped (nothing available to move from %s)" % from_asset_id)
+	if from_current < amount:
+		print("GameManager: reallocate skipped (requested=%d, available=%d from %s)" % [amount, from_current, from_asset_id])
 		return false
-	state.allocated_by_asset[from_asset_id] = from_current - move_amount
-	state.allocated_by_asset[to_asset_id] = to_current + move_amount
+	state.allocated_by_asset[from_asset_id] = from_current - amount
+	state.allocated_by_asset[to_asset_id] = to_current + amount
 	state.total_value = _compute_total_value(state)
-	print("GameManager: reallocated $%d from %s to %s" % [move_amount, from_asset_id, to_asset_id])
+	print("GameManager: reallocated $%d from %s to %s" % [amount, from_asset_id, to_asset_id])
 	return true
 
 

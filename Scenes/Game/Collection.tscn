@@ -1,13 +1,14 @@
-[gd_scene load_steps=9 format=3 uid="uid://c1h13euumpuks"]
+[gd_scene load_steps=10 format=3 uid="uid://c1h13euumpuks"]
 
 [ext_resource type="Script" path="res://Scripts/UI/Collection.gd" id="1_1mr7b"]
 [ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_5n4u7"]
 [ext_resource type="Texture2D" uid="uid://bkufwj8ahoe4w" path="res://Assets/Images/UI/background.png" id="2_videy"]
 [ext_resource type="Texture2D" uid="uid://cbb0hko5ah6ge" path="res://Assets/Images/UI/MainMenuButton.png" id="4_yewvn"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_h31e8"]
+[ext_resource type="Texture2D" uid="uid://bgvj1j6scj43j" path="res://Assets/Images/UI/SettingsButton.png" id="5_owgyl"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_t5qoq"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_h31e8"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ew5ff"]
 
@@ -79,21 +80,21 @@ grow_vertical = 0
 theme_override_constants/separation = 40
 alignment = 1
 
+[node name="MainMenuButton" type="Button" parent="ButtonsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/focus = SubResource("StyleBoxEmpty_t5qoq")
+icon = ExtResource("4_yewvn")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
 [node name="CollectionButton" type="Button" parent="ButtonsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_h31e8")
 disabled = true
 icon = ExtResource("1_5n4u7")
-flat = true
-icon_alignment = 1
-expand_icon = true
-
-[node name="MainMenuButton" type="Button" parent="ButtonsRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_styles/focus = SubResource("StyleBoxEmpty_t5qoq")
-icon = ExtResource("4_yewvn")
 flat = true
 icon_alignment = 1
 expand_icon = true
@@ -111,7 +112,7 @@ expand_icon = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_nqlcp")
-icon = ExtResource("1_5n4u7")
+icon = ExtResource("5_owgyl")
 flat = true
 icon_alignment = 1
 expand_icon = true

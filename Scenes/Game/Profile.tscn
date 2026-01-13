@@ -1,13 +1,14 @@
-[gd_scene load_steps=9 format=3 uid="uid://l4p1oit7vlpt"]
+[gd_scene load_steps=10 format=3 uid="uid://l4p1oit7vlpt"]
 
 [ext_resource type="Script" path="res://Scripts/UI/Profile.gd" id="1_g5ayh"]
 [ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_rp6d8"]
 [ext_resource type="Texture2D" uid="uid://bkufwj8ahoe4w" path="res://Assets/Images/UI/background.png" id="2_57fsh"]
 [ext_resource type="Texture2D" uid="uid://cbb0hko5ah6ge" path="res://Assets/Images/UI/MainMenuButton.png" id="4_p557p"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_kipis"]
+[ext_resource type="Texture2D" uid="uid://bgvj1j6scj43j" path="res://Assets/Images/UI/SettingsButton.png" id="5_sjujq"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_numfs"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_kipis"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_v7jst"]
 
@@ -116,20 +117,20 @@ grow_vertical = 0
 theme_override_constants/separation = 40
 alignment = 1
 
-[node name="CollectionButton" type="Button" parent="ButtonsRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_styles/focus = SubResource("StyleBoxEmpty_kipis")
-icon = ExtResource("1_rp6d8")
-flat = true
-icon_alignment = 1
-expand_icon = true
-
 [node name="MainMenuButton" type="Button" parent="ButtonsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_numfs")
 icon = ExtResource("4_p557p")
+flat = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="CollectionButton" type="Button" parent="ButtonsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/focus = SubResource("StyleBoxEmpty_kipis")
+icon = ExtResource("1_rp6d8")
 flat = true
 icon_alignment = 1
 expand_icon = true
@@ -148,7 +149,7 @@ expand_icon = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_netxv")
-icon = ExtResource("1_rp6d8")
+icon = ExtResource("5_sjujq")
 flat = true
 icon_alignment = 1
 expand_icon = true

@@ -2,13 +2,15 @@ extends Control
 
 const IndicatorDBPath := "res://Resources/IndicatorDB.tres"
 const DRAG_THRESHOLD_PX := 12
-const REALLOC_AMOUNT := 1000
-const ALLOC_AMOUNT := 1000
+const REALLOC_AMOUNT := 100
+const ALLOC_AMOUNT := 100
 
 var _indicator_flow: Node = null
 var _indicator_template: Control = null
 var _indicator_db: IndicatorDB = null
 var _asset_slots: Array = []
+var _asset_base_scales: Dictionary = {}
+var _asset_tweens: Dictionary = {}
 var _asset_signals_connected: bool = false
 var _pointer_down_asset_id: String = ""
 var _pointer_down_pos: Vector2 = Vector2.ZERO
@@ -64,7 +66,10 @@ func _on_asset_pressed(asset_id: String) -> void:
 		print("Match: asset pressed with empty asset id")
 		return
 	print("Match: tap allocate -> %s" % asset_id)
-	GameManager.allocate_to_asset(asset_id, ALLOC_AMOUNT)
+	if GameManager.allocate_to_asset(asset_id, ALLOC_AMOUNT):
+		_refresh_allocation_labels()
+		play_asset_feedback(asset_id, "pop")
+		_start_month_timer_if_needed()
 
 
 func _start_pointer_cycle(asset_id: String, global_pos: Vector2) -> void:
@@ -113,6 +118,8 @@ func _finish_pointer_cycle(asset_id: String, global_pos: Vector2) -> void:
 			print("Match: drag drop -> %s -> %s" % [from_asset_id, target_asset_id])
 			if GameManager.reallocate(from_asset_id, target_asset_id, REALLOC_AMOUNT):
 				_refresh_allocation_labels()
+				play_asset_feedback(from_asset_id, "shrink")
+				play_asset_feedback(target_asset_id, "pop")
 		else:
 			print("Match: drag cancel")
 		return
@@ -120,6 +127,7 @@ func _finish_pointer_cycle(asset_id: String, global_pos: Vector2) -> void:
 	print("Match: tap allocate -> %s" % from_asset_id)
 	if GameManager.allocate_to_asset(from_asset_id, ALLOC_AMOUNT):
 		_refresh_allocation_labels()
+		play_asset_feedback(from_asset_id, "pop")
 		_start_month_timer_if_needed()
 
 
@@ -168,6 +176,65 @@ func _refresh_allocation_labels() -> void:
 		_unallocated_label.text = "Unallocated Funds: $%d" % unallocated
 	print("Match: updated value labels %s" % ", ".join(log_values))
 	_update_month_label()
+
+
+func _find_asset_node_by_id(asset_id: String) -> Node:
+	_cache_asset_slots()
+	for slot_data in _asset_slots:
+		var asset_node: Node = slot_data.get("node")
+		if asset_node == null:
+			continue
+		if _get_asset_id(asset_node) == asset_id:
+			return asset_node
+	return null
+
+
+func _get_asset_base_scale(asset_node: Node) -> Vector2:
+	if asset_node == null:
+		return Vector2.ONE
+	if _asset_base_scales.has(asset_node):
+		return _asset_base_scales[asset_node]
+	var base_scale: Vector2 = asset_node.scale
+	_asset_base_scales[asset_node] = base_scale
+	return base_scale
+
+
+func _reset_asset_tween(asset_node: Node, base_scale: Vector2) -> void:
+	if asset_node == null:
+		return
+	if _asset_tweens.has(asset_node):
+		var existing: Tween = _asset_tweens[asset_node]
+		if existing:
+			existing.kill()
+		_asset_tweens.erase(asset_node)
+	asset_node.scale = base_scale
+
+
+func play_asset_feedback(asset_id: String, kind: String) -> void:
+	if asset_id == "":
+		return
+	var asset_node := _find_asset_node_by_id(asset_id)
+	if asset_node == null:
+		return
+	var base_scale := _get_asset_base_scale(asset_node)
+	_reset_asset_tween(asset_node, base_scale)
+	var tween := create_tween()
+	_asset_tweens[asset_node] = tween
+	if kind == "shrink":
+		var shrink_scale := base_scale * 0.96
+		tween.tween_property(asset_node, "scale", shrink_scale, 0.06).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.tween_property(asset_node, "scale", base_scale, 0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	else:
+		var pop_scale := base_scale * 1.08
+		tween.tween_property(asset_node, "scale", pop_scale, 0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tween.tween_property(asset_node, "scale", base_scale, 0.1).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.tween_callback(Callable(self, "_on_asset_tween_finished").bind(asset_node, base_scale))
+
+
+func _on_asset_tween_finished(asset_node: Node, base_scale: Vector2) -> void:
+	if asset_node:
+		asset_node.scale = base_scale
+	_asset_tweens.erase(asset_node)
 
 
 func _event_to_global(event: InputEvent, asset_node: Control) -> Vector2:
@@ -374,6 +441,8 @@ func _cache_asset_slots() -> void:
 		var hit_button: Button = asset_node.get_node_or_null("HitButton")
 		if hit_button == null:
 			hit_button = asset_node.get_node_or_null("Button")
+		if asset_node and not _asset_base_scales.has(asset_node):
+			_asset_base_scales[asset_node] = asset_node.scale
 		_asset_slots.append({
 			"slot_index": slot_index,
 			"node": asset_node,

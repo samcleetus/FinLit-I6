@@ -1,10 +1,13 @@
-[gd_scene load_steps=6 format=3 uid="uid://bd1avrq7ogqn7"]
+[gd_scene load_steps=8 format=3 uid="uid://bd1avrq7ogqn7"]
 
 [ext_resource type="Script" path="res://Scripts/UI/StartRun.gd" id="1_f6pcr"]
-[ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_mhe3e"]
+[ext_resource type="Texture2D" uid="uid://bkufwj8ahoe4w" path="res://Assets/Images/UI/background.png" id="2_hmyfe"]
 [ext_resource type="PackedScene" uid="uid://bhmdobeuhceae" path="res://Scenes/UI/AssetCard.tscn" id="3_gwf7r"]
+[ext_resource type="Texture2D" uid="uid://bycg0gm060oac" path="res://Assets/Images/UI/BackButton.png" id="3_p1ykm"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_paj35"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jsffp"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_wti6h"]
 
@@ -24,6 +27,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+texture = ExtResource("2_hmyfe")
 
 [node name="TitleVBox" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -36,14 +40,18 @@ offset_right = 40.0
 offset_bottom = 40.0
 
 [node name="BackButton" type="Button" parent="TitleVBox"]
+custom_minimum_size = Vector2(175, 175)
 layout_mode = 2
 size_flags_horizontal = 0
 theme_override_styles/focus = SubResource("StyleBoxEmpty_paj35")
-icon = ExtResource("1_mhe3e")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_jsffp")
+icon = ExtResource("3_p1ykm")
 flat = true
+expand_icon = true
 
 [node name="TitleLabel" type="Label" parent="TitleVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
 theme_override_font_sizes/font_size = 80
 text = "Choose your Assets"
 horizontal_alignment = 1

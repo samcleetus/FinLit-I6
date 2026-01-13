@@ -2,6 +2,9 @@ extends Node
 
 const AppSettingsResource = preload("res://Scripts/Data/AppSettings.gd")
 const RunStateResource = preload("res://Scripts/Data/RunState.gd")
+const ProfileStatsResource = preload("res://Scripts/Data/ProfileStats.gd")
+const ProfileViewModelResource = preload("res://Scripts/ViewModels/ProfileViewModel.gd")
+const ProfileViewModel = preload("res://Scripts/ViewModels/ProfileViewModel.gd")
 const PersistenceUtil = preload("res://Scripts/Systems/Persistence.gd")
 const MonthResolverUtil = preload("res://Scripts/Game/MonthResolver.gd")
 const IndicatorDBPath := "res://Resources/IndicatorDB.tres"
@@ -29,6 +32,8 @@ var current_year_scenario: YearScenario = null
 var scenario_config: ScenarioGeneratorConfig = null
 var run_seed: int = 0
 var _behavior_matrix: BehaviorMatrix = null
+var _profile_stats: Object = null
+var _run_completion_recorded: bool = false
 
 var _scene_paths := {
 	SceneId.BOOT: "res://Scenes/Game/Boot.tscn",
@@ -45,6 +50,7 @@ var _scene_paths := {
 func _ready() -> void:
 	print("GameManager: _ready called, loading AppSettings and initializing session mode to NONE")
 	_load_or_init_settings()
+	_load_profile_stats()
 	_reset_run_tracking()
 	_load_scenario_config()
 	debug_validate_data_resources()
@@ -82,6 +88,7 @@ func set_difficulty(value) -> void:
 func start_new_run(chosen_asset_ids: Array[String]) -> bool:
 	_run_counter += 1
 	session_mode = SessionMode.RUN
+	_run_completion_recorded = false
 	var state: Object = RunStateResource.new()
 	state.run_id = _generate_run_id("run")
 	state.current_year_index = 0
@@ -110,6 +117,7 @@ func start_new_run(chosen_asset_ids: Array[String]) -> bool:
 func start_practice(params: Dictionary = {}) -> bool:
 	_run_counter += 1
 	session_mode = SessionMode.PRACTICE
+	_run_completion_recorded = false
 	run_state = null
 	var practice_id := _generate_run_id("practice")
 	print("GameManager: start_practice called with params %s -> mode=%s run_id=%s (practice flow not yet implemented)" % [params, _session_mode_to_string(session_mode), practice_id])
@@ -218,6 +226,7 @@ func allocate_to_asset(asset_id: String, _amount: int) -> bool:
 	state.allocated_by_asset[asset_id] = previous + move_cents
 	state.match_started = true
 	state.total_value = _compute_total_value(state)
+	_record_allocation_stat()
 	print("GameManager: allocated %s to %s (unallocated=%s)" % [_format_currency(move_cents), asset_id, _format_currency(state.unallocated_funds)])
 	return true
 
@@ -279,6 +288,10 @@ func _apply_month_step() -> bool:
 
 	_ensure_settings_loaded()
 
+	var indicator_ids: Array = []
+	if current_year_scenario != null:
+		indicator_ids = current_year_scenario.indicator_ids
+
 	var resolver_result := MonthResolverUtil.resolve_month_step(
 		_behavior_matrix,
 		current_year_scenario,
@@ -299,7 +312,13 @@ func _apply_month_step() -> bool:
 		new_total_value = _compute_total_value(state, new_allocated, state.unallocated_funds)
 	state.total_value = new_total_value
 
+	_record_indicator_exposure(indicator_ids)
+
 	state.current_month += 1
+	var time_horizon := _settings.time_horizon if _settings else 0
+	var run_finished: bool = state.current_month >= MONTHS_PER_YEAR and current_year_index + 1 >= time_horizon
+	if run_finished:
+		_update_profile_stats_for_run_completion()
 	print("GameManager: month advanced -> %d total=%s unallocated=%s" % [state.current_month, _format_currency(state.total_value), _format_currency(state.unallocated_funds)])
 	return true
 
@@ -342,6 +361,7 @@ func is_run_active() -> bool:
 func get_profile_summary() -> Dictionary:
 	print("GameManager: get_profile_summary called")
 	_ensure_settings_loaded()
+	_ensure_profile_stats_loaded()
 	if not _settings:
 		return {"status": "uninitialized"}
 	return {
@@ -350,8 +370,23 @@ func get_profile_summary() -> Dictionary:
 		"time_horizon": _settings.time_horizon,
 		"session_mode": _session_mode_to_string(session_mode),
 		"run_id": run_state.run_id if run_state else "",
-		"runs_completed": 0,
+		"runs_completed": _profile_stats.total_runs_completed,
+		"best_run_total_cents": _profile_stats.best_run_total_cents,
+		"total_allocations_made": _profile_stats.total_allocations_made,
 	}
+
+
+func get_profile_view_model() -> ProfileViewModel:
+	_ensure_settings_loaded()
+	_ensure_profile_stats_loaded()
+	var show_cents := _get_normalized_play_difficulty() == "hard"
+	return ProfileViewModelResource.from_stats(_profile_stats, show_cents)
+
+
+func reset_profile_stats() -> void:
+	_ensure_profile_stats_loaded()
+	_profile_stats.reset()
+	_persist_profile_stats()
 
 
 func go_to(scene_id: int) -> void:
@@ -432,6 +467,7 @@ func get_scene_path(scene_id: int) -> String:
 func _reset_run_tracking() -> void:
 	session_mode = SessionMode.NONE
 	run_state = null
+	_run_completion_recorded = false
 	current_year_scenario = null
 	run_seed = 0
 	current_year_index = 0
@@ -464,6 +500,31 @@ func _persist_settings(emit_signal_flag: bool = true) -> void:
 func _ensure_settings_loaded() -> void:
 	if _settings == null:
 		_load_or_init_settings()
+
+
+func _load_profile_stats() -> void:
+	_profile_stats = PersistenceUtil.load_profile_stats()
+	if _profile_stats == null:
+		_profile_stats = ProfileStatsResource.new()
+	if _profile_stats.indicator_exposure_counts == null or typeof(_profile_stats.indicator_exposure_counts) != TYPE_DICTIONARY:
+		_profile_stats.indicator_exposure_counts = {}
+	print("GameManager: profile stats loaded")
+
+
+func _persist_profile_stats() -> void:
+	if _profile_stats == null:
+		_profile_stats = ProfileStatsResource.new()
+	if _profile_stats.indicator_exposure_counts == null or typeof(_profile_stats.indicator_exposure_counts) != TYPE_DICTIONARY:
+		_profile_stats.indicator_exposure_counts = {}
+	PersistenceUtil.save_profile_stats(_profile_stats)
+	print("GameManager: profile stats saved")
+
+
+func _ensure_profile_stats_loaded() -> void:
+	if _profile_stats == null:
+		_load_profile_stats()
+	elif _profile_stats.indicator_exposure_counts == null or typeof(_profile_stats.indicator_exposure_counts) != TYPE_DICTIONARY:
+		_profile_stats.indicator_exposure_counts = {}
 
 
 func _parse_int_value(value) -> int:
@@ -634,6 +695,7 @@ func advance_year() -> bool:
 	var time_horizon := _settings.time_horizon if _settings else 0
 	if current_year_index + 1 >= time_horizon:
 		print("GameManager: end of run reached (year %s)" % current_year_index)
+		_update_profile_stats_for_run_completion()
 		return false
 	current_year_index += 1
 	if run_state != null:
@@ -1015,6 +1077,51 @@ func _compute_total_value(state: RunState, allocations: Variant = null, unalloca
 	for value in allocation_dict.values():
 		total += int(round(value))
 	return int(total)
+
+
+func _record_allocation_stat() -> void:
+	if session_mode != SessionMode.RUN:
+		return
+	_ensure_profile_stats_loaded()
+	_profile_stats.total_allocations_made += 1
+	print("GameManager: allocation stat incremented")
+	_persist_profile_stats()
+
+
+func _record_indicator_exposure(indicator_ids: Array) -> void:
+	if session_mode != SessionMode.RUN:
+		return
+	if indicator_ids == null:
+		return
+	_ensure_profile_stats_loaded()
+	if _profile_stats.indicator_exposure_counts == null or typeof(_profile_stats.indicator_exposure_counts) != TYPE_DICTIONARY:
+		_profile_stats.indicator_exposure_counts = {}
+	for indicator_id in indicator_ids:
+		var normalized_id := str(indicator_id)
+		if normalized_id == "":
+			continue
+		var prev := int(_profile_stats.indicator_exposure_counts.get(normalized_id, 0))
+		_profile_stats.indicator_exposure_counts[normalized_id] = prev + 1
+	_persist_profile_stats()
+
+
+func _update_profile_stats_for_run_completion() -> void:
+	if session_mode != SessionMode.RUN:
+		return
+	if _run_completion_recorded:
+		return
+	_ensure_profile_stats_loaded()
+	_profile_stats.total_runs_completed += 1
+	var final_total_cents := 0
+	var state := run_state as RunState
+	if state != null:
+		_ensure_state_currency_in_cents(state)
+		final_total_cents = _compute_total_value(state)
+	if final_total_cents > _profile_stats.best_run_total_cents:
+		_profile_stats.best_run_total_cents = final_total_cents
+	_run_completion_recorded = true
+	print("GameManager: run completed, stats updated")
+	_persist_profile_stats()
 
 
 func _ensure_behavior_matrix_loaded() -> void:

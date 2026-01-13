@@ -1,8 +1,8 @@
-[gd_scene load_steps=14 format=3 uid="uid://ds3i0buprpqvs"]
+[gd_scene load_steps=18 format=3 uid="uid://ds3i0buprpqvs"]
 
 [ext_resource type="Script" path="res://Scripts/UI/MainMenu.gd" id="1_mwn2r"]
 [ext_resource type="Texture2D" uid="uid://bkufwj8ahoe4w" path="res://Assets/Images/UI/background.png" id="2_nmk72"]
-[ext_resource type="Texture2D" uid="uid://cqexsm8w3wa6i" path="res://Assets/Images/UI/Container.png" id="3_2o74f"]
+[ext_resource type="Texture2D" uid="uid://ddbvsw0k3edeb" path="res://Assets/Images/UI/Container.png" id="3_2o74f"]
 [ext_resource type="Texture2D" uid="uid://cc5jwj8bcsak1" path="res://Assets/Images/UI/PlayButton.png" id="3_sm76x"]
 [ext_resource type="Texture2D" uid="uid://6ksqt2cf5qei" path="res://Assets/Images/UI/CollectionButton.png" id="4_jgia4"]
 [ext_resource type="Texture2D" uid="uid://cbb0hko5ah6ge" path="res://Assets/Images/UI/MainMenuButton.png" id="4_sbmxj"]
@@ -11,14 +11,21 @@
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_7glq7"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4tj7b"]
+
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ni302"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_j6cas"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_par4t"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_td15f"]
-bg_color = Color(0, 0, 0, 0.623529)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7nprn"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_g3vjj"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_crvgf"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_c8xf2"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -89,6 +96,7 @@ custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 theme_override_font_sizes/font_size = 60
 theme_override_styles/focus = SubResource("StyleBoxEmpty_7glq7")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_4tj7b")
 icon = ExtResource("3_sm76x")
 flat = true
 
@@ -109,6 +117,7 @@ alignment = 1
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_ni302")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_j6cas")
 disabled = true
 icon = ExtResource("4_sbmxj")
 flat = true
@@ -119,7 +128,7 @@ expand_icon = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_par4t")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_td15f")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_7nprn")
 icon = ExtResource("4_jgia4")
 flat = true
 icon_alignment = 1
@@ -129,6 +138,7 @@ expand_icon = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_g3vjj")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_crvgf")
 icon = ExtResource("5_mm6iv")
 flat = true
 icon_alignment = 1
@@ -138,6 +148,7 @@ expand_icon = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_g3vjj")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_c8xf2")
 icon = ExtResource("5_ty0lx")
 flat = true
 icon_alignment = 1

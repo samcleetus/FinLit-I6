@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://c1h13euumpuks"]
+[gd_scene load_steps=15 format=3 uid="uid://c1h13euumpuks"]
 
 [ext_resource type="Script" path="res://Scripts/UI/Collection.gd" id="1_1mr7b"]
 [ext_resource type="Texture2D" uid="uid://bkufwj8ahoe4w" path="res://Assets/Images/UI/background.png" id="2_videy"]
@@ -9,11 +9,19 @@
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_t5qoq"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_p10l8"]
+
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_h31e8"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pd7qg"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ew5ff"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_oge6k"]
+
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_nqlcp"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_t37qc"]
 
 [node name="Collection" type="Control"]
 layout_mode = 3
@@ -85,6 +93,7 @@ alignment = 1
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_t5qoq")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_p10l8")
 icon = ExtResource("4_yewvn")
 flat = true
 icon_alignment = 1
@@ -94,6 +103,7 @@ expand_icon = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_h31e8")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_pd7qg")
 disabled = true
 icon = ExtResource("4_lhqgl")
 flat = true
@@ -104,6 +114,7 @@ expand_icon = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_ew5ff")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_oge6k")
 icon = ExtResource("5_hp3yq")
 flat = true
 icon_alignment = 1
@@ -113,6 +124,7 @@ expand_icon = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_nqlcp")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_t37qc")
 icon = ExtResource("5_owgyl")
 flat = true
 icon_alignment = 1

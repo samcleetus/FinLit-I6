@@ -1,7 +1,8 @@
-[gd_scene load_steps=6 format=3 uid="uid://lbc58g6lne8g"]
+[gd_scene load_steps=7 format=3 uid="uid://lbc58g6lne8g"]
 
 [ext_resource type="PackedScene" uid="uid://bhmdobeuhceae" path="res://Scenes/UI/AssetCard.tscn" id="1_jmgjt"]
 [ext_resource type="Script" path="res://Scripts/UI/Match.gd" id="1_l0fja"]
+[ext_resource type="Texture2D" uid="uid://bkufwj8ahoe4w" path="res://Assets/Images/UI/background.png" id="2_0p2t6"]
 [ext_resource type="PackedScene" uid="uid://bpgcr756l6cp8" path="res://Scenes/UI/EndMatchOverlay.tscn" id="3_n0vqm"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8fgj2"]
@@ -25,6 +26,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+texture = ExtResource("2_0p2t6")
 
 [node name="LabelVBox" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -39,11 +41,13 @@ theme_override_constants/separation = 20
 
 [node name="TotalValueLabel" type="Label" parent="LabelVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
 theme_override_font_sizes/font_size = 50
 text = "Total Value: $0"
 
 [node name="UnallocatedLabel" type="Label" parent="LabelVBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
 theme_override_font_sizes/font_size = 50
 text = "Unallocated Funds: $0"
 
@@ -53,6 +57,7 @@ theme_override_constants/separation = 100
 
 [node name="MonthLabel" type="Label" parent="LabelVBox/MonthHBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
 theme_override_font_sizes/font_size = 50
 text = "Month: 0"
 

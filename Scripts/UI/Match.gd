@@ -41,10 +41,8 @@ func _ready() -> void:
 	_cache_end_match_overlay()
 	_cache_allocate_prompt()
 	_initialize_month_ui()
-	var vm := GameManager.get_match_view_model()
-	_render_from_view_model(vm)
-	_apply_assets_to_fixed_slots(vm)
-	_refresh_allocation_labels()
+	var vm := GameManager.build_match_view_model()
+	_apply_view_model(vm, true)
 
 
 func _session_mode_to_string(mode: int) -> String:
@@ -205,10 +203,8 @@ func _on_next_year_button_pressed() -> void:
 	if not advanced:
 		print("Match: cannot advance year (run complete)")
 		return
-	var vm := GameManager.get_match_view_model()
-	_render_from_view_model(vm)
-	_apply_assets_to_fixed_slots(vm)
-	_refresh_allocation_labels()
+	var vm := GameManager.build_match_view_model()
+	_apply_view_model(vm, true)
 
 
 func _render_current_scenario() -> void:
@@ -239,14 +235,28 @@ func _render_current_scenario() -> void:
 			label.text = "    %s: %d%%   " % [indicator.display_name, int(round(value))]
 		rendered += 1
 
-	print("Match: rendered indicators %s" % rendered)
+	print("Match: rendered indicators %s month=%d" % [rendered, GameManager.get_month()])
+
+
+func _apply_view_model(vm: MatchViewModel, reapply_assets: bool = false) -> void:
+	if vm == null:
+		push_error("Match: view model is null.")
+		return
+	_cache_indicator_nodes()
+	_render_from_view_model(vm)
+	if reapply_assets:
+		_apply_assets_to_fixed_slots(vm)
+	else:
+		_refresh_allocation_labels()
+	var indicator_count := vm.indicators.size()
+	print("Match: refreshed VM month=%d indicators=%d" % [GameManager.get_month(), indicator_count])
 
 
 func _clear_indicator_panels() -> void:
 	for child in _indicator_flow.get_children():
 		if child == _indicator_template:
 			continue
-		child.queue_free()
+		child.free()
 
 
 func _cache_indicator_nodes() -> void:
@@ -496,7 +506,7 @@ func _render_from_view_model(vm: MatchViewModel) -> void:
 			label.text = text
 		rendered += 1
 
-	print("Match: rendered indicators %s" % rendered)
+	print("Match: rendered indicators %s month=%d" % [rendered, GameManager.get_month()])
 
 
 func _apply_assets_to_fixed_slots(vm: MatchViewModel) -> void:
@@ -584,7 +594,8 @@ func _on_month_timer_timeout() -> void:
 	if not ok:
 		end_match()
 		return
-	_refresh_allocation_labels()
+	var vm := GameManager.build_match_view_model()
+	_apply_view_model(vm)
 	if _month_progress:
 		_month_progress.value = 0
 	print("Match: month -> %d" % GameManager.get_month())

@@ -275,7 +275,7 @@ func _apply_month_step() -> bool:
 	return true
 
 
-func get_match_view_model() -> MatchViewModel:
+func build_match_view_model() -> MatchViewModel:
 	_ensure_settings_loaded()
 	var vm := MatchViewModel.new()
 	var settings := _settings
@@ -289,11 +289,19 @@ func get_match_view_model() -> MatchViewModel:
 	if current_year_scenario == null:
 		push_warning("GameManager: get_match_view_model called but current_year_scenario is null.")
 	else:
-		vm.indicators = _build_indicator_view_models(current_year_scenario)
+		var indicator_levels: Dictionary = {}
+		var indicator_values: Dictionary = {}
+		vm.indicators = _build_indicator_view_models(current_year_scenario, indicator_levels, indicator_values)
+		vm.indicator_levels = indicator_levels
+		vm.indicator_values = indicator_values
 
 	vm.asset_slots = _build_asset_slot_view_models()
 	print("GameManager: built MatchViewModel -> %s" % vm.to_debug_string())
 	return vm
+
+
+func get_match_view_model() -> MatchViewModel:
+	return build_match_view_model()
 
 
 func is_run_active() -> bool:
@@ -601,7 +609,7 @@ func _get_available_indicator_ids() -> Array[String]:
 	return ids
 
 
-func _build_indicator_view_models(scenario: YearScenario) -> Array[IndicatorViewModel]:
+func _build_indicator_view_models(scenario: YearScenario, out_levels: Dictionary = {}, out_values: Dictionary = {}) -> Array[IndicatorViewModel]:
 	var indicator_vms: Array[IndicatorViewModel] = []
 	var indicator_db := load(IndicatorDBPath)
 	if indicator_db == null:
@@ -619,15 +627,19 @@ func _build_indicator_view_models(scenario: YearScenario) -> Array[IndicatorView
 			push_warning("GameManager: indicator '%s' not found in IndicatorDB." % indicator_id)
 			continue
 
-		var level := _get_current_indicator_level(indicator_id, scenario)
-		var indicator_seed := _make_indicator_seed(indicator_id)
+		var level: int = _get_current_indicator_level(indicator_id, scenario)
+		if typeof(out_levels) == TYPE_DICTIONARY:
+			out_levels[indicator_id] = level
+		var indicator_seed: int = _make_indicator_seed(indicator_id)
 		var value: float = indicator.mid_value
 		if level == ScenarioGenerator.LEVEL_LOW:
 			value = _rand_between_values(indicator.low_value, indicator.mid_value, indicator_seed)
 		elif level == ScenarioGenerator.LEVEL_HIGH:
 			value = _rand_between_values(indicator.mid_value, indicator.high_value, indicator_seed)
 
-		var value_int := int(round(value))
+		var value_int: int = int(round(value))
+		if typeof(out_values) == TYPE_DICTIONARY:
+			out_values[indicator_id] = value_int
 		var value_text := "%s: %d%%" % [indicator.display_name, value_int]
 		var view_model := IndicatorViewModel.new(indicator_id, indicator.display_name, value_text)
 		indicator_vms.append(view_model)

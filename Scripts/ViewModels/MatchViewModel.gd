@@ -8,6 +8,8 @@ var indicators: Array[IndicatorViewModel] = []
 var asset_slots: Array[AssetSlotViewModel] = []
 var debug_run_id: String = ""
 var debug_seed: int = 0
+var indicator_levels: Dictionary = {}
+var indicator_values: Dictionary = {}
 
 
 func to_debug_string() -> String:

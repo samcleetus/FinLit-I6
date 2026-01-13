@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://ds3i0buprpqvs"]
+[gd_scene load_steps=14 format=3 uid="uid://ds3i0buprpqvs"]
 
 [ext_resource type="Script" path="res://Scripts/UI/MainMenu.gd" id="1_mwn2r"]
 [ext_resource type="Texture2D" uid="uid://bkufwj8ahoe4w" path="res://Assets/Images/UI/background.png" id="2_nmk72"]
@@ -14,6 +14,9 @@
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ni302"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_par4t"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_td15f"]
+bg_color = Color(0, 0, 0, 0.623529)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_g3vjj"]
 
@@ -116,6 +119,7 @@ expand_icon = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_par4t")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_td15f")
 icon = ExtResource("4_jgia4")
 flat = true
 icon_alignment = 1

@@ -2,8 +2,8 @@ extends Control
 
 const IndicatorDBPath := "res://Resources/IndicatorDB.tres"
 const DRAG_THRESHOLD_PX := 12
-const REALLOC_AMOUNT := 100
-const ALLOC_AMOUNT := 100
+const REALLOC_AMOUNT := int(GameManager.REALLOC_STEP_CENTS / GameManager.CENTS_PER_DOLLAR)
+const ALLOC_AMOUNT := int(GameManager.ALLOC_STEP_CENTS / GameManager.CENTS_PER_DOLLAR)
 
 var _indicator_flow: Node = null
 var _indicator_template: Control = null

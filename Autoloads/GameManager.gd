@@ -8,10 +8,11 @@ const IndicatorDBPath := "res://Resources/IndicatorDB.tres"
 const AssetDBPath := "res://Resources/AssetDB.tres"
 const BehaviorMatrixPath := "res://Resources/BehaviorMatrix.tres"
 const CENTS_PER_DOLLAR := 100
+const ALLOC_STEP_CENTS := 10000
+const REALLOC_STEP_CENTS := 5000
 const MONTHS_PER_YEAR := 12
 const DEFAULT_TOTAL_FUNDS := 10000
 const DEFAULT_TOTAL_FUNDS_CENTS := DEFAULT_TOTAL_FUNDS * CENTS_PER_DOLLAR
-const ALLOCATION_STEP := 100
 
 @warning_ignore("unused_signal")
 signal settings_changed(settings)
@@ -27,7 +28,6 @@ var current_year_index: int = 0
 var current_year_scenario: YearScenario = null
 var scenario_config: ScenarioGeneratorConfig = null
 var run_seed: int = 0
-var tap_amount: int = ALLOCATION_STEP
 var _behavior_matrix: BehaviorMatrix = null
 
 var _scene_paths := {
@@ -195,7 +195,7 @@ func advance_month() -> bool:
 	return _apply_month_step()
 
 
-func allocate_to_asset(asset_id: String, amount: int) -> bool:
+func allocate_to_asset(asset_id: String, _amount: int) -> bool:
 	if session_mode != SessionMode.RUN or run_state == null:
 		print("GameManager: allocate_to_asset skipped (no active run)")
 		return false
@@ -209,31 +209,25 @@ func allocate_to_asset(asset_id: String, amount: int) -> bool:
 	_ensure_state_currency_in_cents(state)
 	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
 		state.allocated_by_asset = {}
-	var amount_cents := _dollars_to_cents(amount)
-	if amount_cents <= 0:
-		print("GameManager: allocate_to_asset skipped (non-positive amount %d cents)" % amount_cents)
-		return false
-	if state.unallocated_funds < amount_cents:
-		print("GameManager: allocate_to_asset skipped (requested=%s, unallocated=%s)" % [_format_currency(amount_cents), _format_currency(state.unallocated_funds)])
+	var move_cents: int = min(ALLOC_STEP_CENTS, int(state.unallocated_funds))
+	if move_cents <= 0:
+		print("GameManager: allocate_to_asset skipped (unallocated=%s)" % _format_currency(state.unallocated_funds))
 		return false
 	var previous := _get_allocated_cents(state, asset_id)
-	state.unallocated_funds -= amount_cents
-	state.allocated_by_asset[asset_id] = previous + amount_cents
+	state.unallocated_funds -= move_cents
+	state.allocated_by_asset[asset_id] = previous + move_cents
 	state.match_started = true
 	state.total_value = _compute_total_value(state)
-	print("GameManager: allocated %s to %s (unallocated=%s)" % [_format_currency(amount_cents), asset_id, _format_currency(state.unallocated_funds)])
+	print("GameManager: allocated %s to %s (unallocated=%s)" % [_format_currency(move_cents), asset_id, _format_currency(state.unallocated_funds)])
 	return true
 
 
-func reallocate(from_asset_id: String, to_asset_id: String, amount: int) -> bool:
+func reallocate(from_asset_id: String, to_asset_id: String, _amount: int) -> bool:
 	if session_mode != SessionMode.RUN or run_state == null:
 		print("GameManager: reallocate skipped (no active run)")
 		return false
 	if from_asset_id == "" or to_asset_id == "" or from_asset_id == to_asset_id:
 		print("GameManager: reallocate skipped (invalid asset ids)")
-		return false
-	if amount <= 0:
-		print("GameManager: reallocate skipped (non-positive amount %d)" % amount)
 		return false
 	var state := run_state as RunState
 	if state == null:
@@ -242,16 +236,22 @@ func reallocate(from_asset_id: String, to_asset_id: String, amount: int) -> bool
 	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
 		state.allocated_by_asset = {}
 	_ensure_state_currency_in_cents(state)
-	var amount_cents := _dollars_to_cents(amount)
 	var from_current := _get_allocated_cents(state, from_asset_id)
-	var to_current := _get_allocated_cents(state, to_asset_id)
-	if from_current < amount_cents:
-		print("GameManager: reallocate skipped (requested=%s, available=%s from %s)" % [_format_currency(amount_cents), _format_currency(from_current), from_asset_id])
+	if from_current <= 0:
+		print("GameManager: reallocate skipped (empty from=%s holdings=%d move=0)" % [from_asset_id, from_current])
 		return false
-	state.allocated_by_asset[from_asset_id] = from_current - amount_cents
-	state.allocated_by_asset[to_asset_id] = to_current + amount_cents
+	var move_cents: int = min(REALLOC_STEP_CENTS, from_current)
+	var to_current := _get_allocated_cents(state, to_asset_id)
+	state.allocated_by_asset[from_asset_id] = from_current - move_cents
+	state.allocated_by_asset[to_asset_id] = to_current + move_cents
 	state.total_value = _compute_total_value(state)
-	print("GameManager: reallocated %s from %s to %s" % [_format_currency(amount_cents), from_asset_id, to_asset_id])
+	if OS.is_debug_build():
+		var holdings_sum := 0
+		for value in state.allocated_by_asset.values():
+			holdings_sum += int(round(value))
+		var check_total := int(round(state.unallocated_funds)) + holdings_sum
+		assert(check_total == int(round(state.total_value)))
+	print("GameManager: reallocated %s from %s to %s" % [_format_currency(move_cents), from_asset_id, to_asset_id])
 	return true
 
 

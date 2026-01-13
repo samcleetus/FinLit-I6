@@ -1,8 +1,9 @@
-[gd_scene load_steps=8 format=3 uid="uid://c1h13euumpuks"]
+[gd_scene load_steps=9 format=3 uid="uid://c1h13euumpuks"]
 
 [ext_resource type="Script" path="res://Scripts/UI/Collection.gd" id="1_1mr7b"]
 [ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_5n4u7"]
 [ext_resource type="Texture2D" uid="uid://bkufwj8ahoe4w" path="res://Assets/Images/UI/background.png" id="2_videy"]
+[ext_resource type="Texture2D" uid="uid://cbb0hko5ah6ge" path="res://Assets/Images/UI/MainMenuButton.png" id="4_yewvn"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_h31e8"]
 
@@ -92,7 +93,7 @@ expand_icon = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_t5qoq")
-icon = ExtResource("1_5n4u7")
+icon = ExtResource("4_yewvn")
 flat = true
 icon_alignment = 1
 expand_icon = true

@@ -1,8 +1,9 @@
-[gd_scene load_steps=9 format=3 uid="uid://ds3i0buprpqvs"]
+[gd_scene load_steps=10 format=3 uid="uid://ds3i0buprpqvs"]
 
 [ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_afu0a"]
 [ext_resource type="Script" path="res://Scripts/UI/MainMenu.gd" id="1_mwn2r"]
 [ext_resource type="Texture2D" uid="uid://bkufwj8ahoe4w" path="res://Assets/Images/UI/background.png" id="2_nmk72"]
+[ext_resource type="Texture2D" uid="uid://cbb0hko5ah6ge" path="res://Assets/Images/UI/MainMenuButton.png" id="4_sbmxj"]
 
 [sub_resource type="CanvasTexture" id="CanvasTexture_ni22l"]
 specular_color = Color(0.196078, 0.545098, 0.517647, 1)
@@ -113,7 +114,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_ni302")
 disabled = true
-icon = ExtResource("1_afu0a")
+icon = ExtResource("4_sbmxj")
 flat = true
 icon_alignment = 1
 expand_icon = true

@@ -580,8 +580,7 @@ func prepare_next_year() -> void:
 	current_year_index = scenario.year_index
 	if run_state != null:
 		run_state.current_year_index = scenario.year_index
-		run_state.current_indicator_levels = scenario.indicator_levels.duplicate(true)
-		print("ScenarioDrift: init year=%d current_levels=%s" % [scenario.year_index, run_state.current_indicator_levels])
+		_initialize_indicator_state_for_year(scenario)
 	print("Scenario: year=%s indicators=%s levels=%s shocks=%s seed=%s" % [scenario.year_index, scenario.indicator_ids, scenario.indicator_levels, scenario.shocks_triggered, scenario.seed_used])
 
 
@@ -630,16 +629,10 @@ func _build_indicator_view_models(scenario: YearScenario, out_levels: Dictionary
 		var level: int = _get_current_indicator_level(indicator_id, scenario)
 		if typeof(out_levels) == TYPE_DICTIONARY:
 			out_levels[indicator_id] = level
-		var indicator_seed: int = _make_indicator_seed(indicator_id)
-		var value: float = indicator.mid_value
-		if level == ScenarioGenerator.LEVEL_LOW:
-			value = _rand_between_values(indicator.low_value, indicator.mid_value, indicator_seed)
-		elif level == ScenarioGenerator.LEVEL_HIGH:
-			value = _rand_between_values(indicator.mid_value, indicator.high_value, indicator_seed)
-
-		var value_int: int = int(round(value))
+		var current_percent: float = _get_current_indicator_percent(indicator_id, indicator, scenario)
+		var value_int: int = int(round(current_percent))
 		if typeof(out_values) == TYPE_DICTIONARY:
-			out_values[indicator_id] = value_int
+			out_values[indicator_id] = current_percent
 		var value_text := "%s: %d%%" % [indicator.display_name, value_int]
 		var view_model := IndicatorViewModel.new(indicator_id, indicator.display_name, value_text)
 		indicator_vms.append(view_model)
@@ -685,6 +678,57 @@ func _build_asset_slot_view_models() -> Array[AssetSlotViewModel]:
 	return slots
 
 
+func _initialize_indicator_state_for_year(scenario: YearScenario) -> void:
+	var state := run_state as RunState
+	if state == null:
+		return
+	if state.current_indicator_levels == null or typeof(state.current_indicator_levels) != TYPE_DICTIONARY:
+		state.current_indicator_levels = {}
+	if state.current_indicator_percents == null or typeof(state.current_indicator_percents) != TYPE_DICTIONARY:
+		state.current_indicator_percents = {}
+	if state.indicator_momentum == null or typeof(state.indicator_momentum) != TYPE_DICTIONARY:
+		state.indicator_momentum = {}
+	state.current_indicator_levels.clear()
+	state.current_indicator_percents.clear()
+	state.indicator_momentum.clear()
+
+	var indicator_db := load(IndicatorDBPath)
+	if indicator_db == null or not indicator_db.has_method("get_by_id"):
+		push_warning("ScenarioDrift: cannot initialize indicator state, IndicatorDB missing at %s" % IndicatorDBPath)
+		return
+
+	for indicator_id in scenario.indicator_ids:
+		if indicator_id == "":
+			continue
+		var indicator: Object = indicator_db.get_by_id(indicator_id)
+		if indicator == null:
+			push_warning("ScenarioDrift: indicator '%s' missing in DB during init." % indicator_id)
+			continue
+		var base_level := scenario.get_level(indicator_id, ScenarioGenerator.LEVEL_MID)
+		var start_percent := _pick_start_percent(indicator, base_level, indicator_id)
+		state.current_indicator_levels[indicator_id] = base_level
+		state.current_indicator_percents[indicator_id] = start_percent
+		state.indicator_momentum[indicator_id] = 0.0
+
+	print("ScenarioDrift: init year=%d current_levels=%s" % [scenario.year_index, state.current_indicator_levels])
+
+
+func _pick_start_percent(indicator, level: int, indicator_id: String) -> float:
+	var thresholds: Dictionary = _get_indicator_thresholds(indicator)
+	var low_mid: float = float(thresholds.get("low_mid", indicator.mid_value))
+	var mid_high: float = float(thresholds.get("mid_high", indicator.mid_value))
+	var seed_value := _make_indicator_seed(indicator_id)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+	match level:
+		ScenarioGenerator.LEVEL_LOW:
+			return rng.randf_range(indicator.low_value, low_mid)
+		ScenarioGenerator.LEVEL_HIGH:
+			return rng.randf_range(mid_high, indicator.high_value)
+		_:
+			return rng.randf_range(low_mid, mid_high)
+
+
 func _apply_monthly_indicator_drift(month_index: int) -> void:
 	_ensure_settings_loaded()
 	if run_state == null or current_year_scenario == null:
@@ -694,53 +738,117 @@ func _apply_monthly_indicator_drift(month_index: int) -> void:
 		return
 	if state.current_indicator_levels == null or typeof(state.current_indicator_levels) != TYPE_DICTIONARY:
 		state.current_indicator_levels = {}
+	if state.current_indicator_percents == null or typeof(state.current_indicator_percents) != TYPE_DICTIONARY:
+		state.current_indicator_percents = {}
+	if state.indicator_momentum == null or typeof(state.indicator_momentum) != TYPE_DICTIONARY:
+		state.indicator_momentum = {}
+
+	var indicator_db := load(IndicatorDBPath)
+	if indicator_db == null or not indicator_db.has_method("get_by_id"):
+		push_warning("ScenarioDrift: indicator DB unavailable; skipping drift.")
+		return
+
 	var indicator_ids: Array[String] = current_year_scenario.indicator_ids
-	var probs: Dictionary = _get_indicator_drift_probabilities()
-	var difficulty_text := _normalize_drift_difficulty()
+	var step_range: Vector2 = _get_indicator_drift_step_range()
+	var _difficulty_text: String = _normalize_drift_difficulty()
 	for indicator_id in indicator_ids:
 		if indicator_id == "":
 			continue
-		var prev_level: int = _get_current_indicator_level(indicator_id, current_year_scenario)
+		var indicator: Object = indicator_db.get_by_id(indicator_id)
+		if indicator == null:
+			push_warning("ScenarioDrift: indicator '%s' missing; skipping drift." % indicator_id)
+			continue
+		var thresholds: Dictionary = _get_indicator_thresholds(indicator)
+		var prev_percent: float = _get_current_indicator_percent(indicator_id, indicator, current_year_scenario)
+		var prev_momentum: float = 0.0
+		if state.indicator_momentum.has(indicator_id):
+			prev_momentum = float(state.indicator_momentum[indicator_id])
 		var rng: RandomNumberGenerator = _make_indicator_month_rng(indicator_id, month_index)
-		var delta: int = _roll_indicator_drift_delta(probs, rng)
-		var new_level: int = int(clamp(prev_level + delta, ScenarioGenerator.LEVEL_LOW, ScenarioGenerator.LEVEL_HIGH))
+		var step_size: float = rng.randf_range(step_range.x, step_range.y)
+		var random_delta: float = rng.randf_range(-step_size, step_size)
+		var delta: float = random_delta + prev_momentum
+
+		var min_val: float = indicator.low_value
+		var max_val: float = indicator.high_value
+		var candidate: float = clamp(prev_percent + delta, min_val, max_val)
+		if is_equal_approx(candidate, prev_percent):
+			if candidate <= min_val:
+				delta = abs(step_size)
+			elif candidate >= max_val:
+				delta = -abs(step_size)
+			else:
+				delta = step_size if rng.randf() < 0.5 else -step_size
+			candidate = clamp(prev_percent + delta, min_val, max_val)
+
+		var new_percent: float = candidate
+		var new_momentum: float = lerp(prev_momentum, delta, 0.35)
+		var new_level: int = _percent_to_level(new_percent, thresholds)
+
+		state.current_indicator_percents[indicator_id] = new_percent
 		state.current_indicator_levels[indicator_id] = new_level
-		if new_level != prev_level:
-			print("ScenarioDrift: year=%d month=%d indicator=%s %d -> %d difficulty=%s" % [current_year_index, month_index, indicator_id, prev_level, new_level, difficulty_text])
+		state.indicator_momentum[indicator_id] = new_momentum
+		print("ScenarioDrift: year=%d month=%d %s percent=%.2f level=%d delta=%.2f" % [current_year_index, month_index, indicator_id, new_percent, new_level, delta])
 
 
 func _get_current_indicator_level(indicator_id: String, scenario: YearScenario) -> int:
 	var state := run_state as RunState
 	if state != null and state.current_indicator_levels != null and typeof(state.current_indicator_levels) == TYPE_DICTIONARY and state.current_indicator_levels.has(indicator_id):
 		return int(state.current_indicator_levels[indicator_id])
+	if state != null and state.current_indicator_percents != null and typeof(state.current_indicator_percents) == TYPE_DICTIONARY and state.current_indicator_percents.has(indicator_id):
+		var indicator_db := load(IndicatorDBPath)
+		if indicator_db != null and indicator_db.has_method("get_by_id"):
+			var indicator: Object = indicator_db.get_by_id(indicator_id)
+			if indicator != null:
+				var thresholds := _get_indicator_thresholds(indicator)
+				return _percent_to_level(float(state.current_indicator_percents[indicator_id]), thresholds)
 	if scenario != null and scenario.has_method("get_level"):
 		return scenario.get_level(indicator_id, ScenarioGenerator.LEVEL_MID)
 	return ScenarioGenerator.LEVEL_MID
 
 
-func _get_indicator_drift_probabilities() -> Dictionary:
+func _get_indicator_drift_step_range() -> Vector2:
 	var normalized := _normalize_drift_difficulty()
 	match normalized:
 		"easy":
-			return {"stay": 0.70, "down": 0.15, "up": 0.15}
+			return Vector2(0.3, 0.7)
 		"hard":
-			return {"stay": 0.40, "down": 0.30, "up": 0.30}
+			return Vector2(1.5, 3.0)
 		_:
-			return {"stay": 0.55, "down": 0.225, "up": 0.225}
+			return Vector2(0.7, 1.5)
 
 
-func _roll_indicator_drift_delta(probs: Dictionary, rng: RandomNumberGenerator) -> int:
-	var stay_prob: float = float(probs.get("stay", 0.0))
-	var down_prob: float = float(probs.get("down", 0.0))
-	var up_prob: float = float(probs.get("up", 0.0))
-	var roll: float = rng.randf()
-	if roll < stay_prob:
-		return 0
-	elif roll < stay_prob + down_prob:
-		return -1
-	elif roll < stay_prob + down_prob + up_prob:
-		return 1
-	return 0
+func _get_indicator_thresholds(indicator) -> Dictionary:
+	var low_value: float = indicator.low_value
+	var mid_value: float = indicator.mid_value
+	var high_value: float = indicator.high_value
+	var low_mid: float = (low_value + mid_value) * 0.5
+	var mid_high: float = (mid_value + high_value) * 0.5
+	return {
+		"low_mid": low_mid,
+		"mid_high": mid_high,
+	}
+
+
+func _percent_to_level(percent: float, thresholds: Dictionary) -> int:
+	var low_mid: float = float(thresholds.get("low_mid", percent))
+	var mid_high: float = float(thresholds.get("mid_high", percent))
+	if percent < low_mid:
+		return ScenarioGenerator.LEVEL_LOW
+	elif percent > mid_high:
+		return ScenarioGenerator.LEVEL_HIGH
+	return ScenarioGenerator.LEVEL_MID
+
+
+func _get_current_indicator_percent(indicator_id: String, indicator, scenario: YearScenario) -> float:
+	if indicator == null:
+		return 0.0
+	var state := run_state as RunState
+	if state != null and state.current_indicator_percents != null and typeof(state.current_indicator_percents) == TYPE_DICTIONARY and state.current_indicator_percents.has(indicator_id):
+		return float(state.current_indicator_percents[indicator_id])
+	if scenario != null:
+		var level := scenario.get_level(indicator_id, ScenarioGenerator.LEVEL_MID)
+		return _pick_start_percent(indicator, level, indicator_id)
+	return float(indicator.mid_value)
 
 
 func _make_indicator_month_rng(indicator_id: String, month_index: int) -> RandomNumberGenerator:

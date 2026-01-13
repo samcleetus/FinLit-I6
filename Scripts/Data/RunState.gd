@@ -12,6 +12,8 @@ class_name RunState
 @export var current_month: int = 0
 @export var match_started: bool = false
 @export var current_indicator_levels: Dictionary = {}
+@export var current_indicator_percents: Dictionary = {}
+@export var indicator_momentum: Dictionary = {}
 
 
 func reset_history() -> void:

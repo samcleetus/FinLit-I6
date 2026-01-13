@@ -7,8 +7,10 @@ const MonthResolverUtil = preload("res://Scripts/Game/MonthResolver.gd")
 const IndicatorDBPath := "res://Resources/IndicatorDB.tres"
 const AssetDBPath := "res://Resources/AssetDB.tres"
 const BehaviorMatrixPath := "res://Resources/BehaviorMatrix.tres"
+const CENTS_PER_DOLLAR := 100
 const MONTHS_PER_YEAR := 12
 const DEFAULT_TOTAL_FUNDS := 10000
+const DEFAULT_TOTAL_FUNDS_CENTS := DEFAULT_TOTAL_FUNDS * CENTS_PER_DOLLAR
 const ALLOCATION_STEP := 100
 
 @warning_ignore("unused_signal")
@@ -87,9 +89,10 @@ func start_new_run(chosen_asset_ids: Array[String]) -> bool:
 	state.match_started = false
 	state.chosen_asset_ids = chosen_asset_ids.duplicate()
 	state.reset_history()
-	state.total_funds = DEFAULT_TOTAL_FUNDS
+	state.total_funds = DEFAULT_TOTAL_FUNDS_CENTS
 	state.total_value = state.total_funds
 	state.unallocated_funds = state.total_funds
+	state.currency_in_cents = true
 	state.allocated_by_asset = {}
 	for asset_id in state.chosen_asset_ids:
 		state.allocated_by_asset[asset_id] = 0
@@ -132,36 +135,53 @@ func get_session_mode() -> int:
 func get_run_state() -> Object:
 	var id_text: String = run_state.run_id if run_state else "null"
 	print("GameManager: get_run_state called -> session_mode=%s run_id=%s" % [_session_mode_to_string(session_mode), id_text])
+	if run_state is RunState:
+		_ensure_state_currency_in_cents(run_state)
 	return run_state
 
 
-func get_unallocated_funds() -> int:
+func get_unallocated_funds_cents() -> int:
 	var state := run_state as RunState
 	if state == null or state.unallocated_funds == null:
 		return 0
+	_ensure_state_currency_in_cents(state)
 	return int(state.unallocated_funds)
 
 
-func get_allocated_for(asset_id: String) -> int:
+func get_unallocated_funds() -> int:
+	return _cents_to_whole_dollars(get_unallocated_funds_cents())
+
+
+func get_allocated_for_cents(asset_id: String) -> int:
 	if asset_id == "":
 		return 0
 	var state := run_state as RunState
 	if state == null:
 		return 0
-	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
-		return 0
-	return int(state.allocated_by_asset.get(asset_id, 0))
+	_ensure_state_currency_in_cents(state)
+	return _get_allocated_cents(state, asset_id)
 
 
-func get_total_value() -> int:
+func get_allocated_for(asset_id: String) -> int:
+	return _cents_to_whole_dollars(get_allocated_for_cents(asset_id))
+
+
+func get_total_value_cents() -> int:
 	var state := run_state as RunState
 	if state == null:
 		return 0
 	if state.total_value == null:
-		var computed := _compute_total_value(state)
-		state.total_value = computed
-		return computed
+		state.total_value = _compute_total_value(state)
+	_ensure_state_currency_in_cents(state)
 	return int(state.total_value)
+
+
+func get_total_value() -> int:
+	return _cents_to_whole_dollars(get_total_value_cents())
+
+
+func format_currency(amount_cents: int) -> String:
+	return _format_currency(amount_cents)
 
 
 func get_month() -> int:
@@ -186,20 +206,22 @@ func allocate_to_asset(asset_id: String, amount: int) -> bool:
 	if state == null:
 		print("GameManager: allocate_to_asset skipped (run_state missing)")
 		return false
+	_ensure_state_currency_in_cents(state)
 	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
 		state.allocated_by_asset = {}
-	if amount <= 0:
-		print("GameManager: allocate_to_asset skipped (non-positive amount %d)" % amount)
+	var amount_cents := _dollars_to_cents(amount)
+	if amount_cents <= 0:
+		print("GameManager: allocate_to_asset skipped (non-positive amount %d cents)" % amount_cents)
 		return false
-	if state.unallocated_funds < amount:
-		print("GameManager: allocate_to_asset skipped (requested=%d, unallocated=%d)" % [amount, state.unallocated_funds])
+	if state.unallocated_funds < amount_cents:
+		print("GameManager: allocate_to_asset skipped (requested=%s, unallocated=%s)" % [_format_currency(amount_cents), _format_currency(state.unallocated_funds)])
 		return false
-	var previous := int(state.allocated_by_asset.get(asset_id, 0))
-	state.unallocated_funds -= amount
-	state.allocated_by_asset[asset_id] = previous + amount
+	var previous := _get_allocated_cents(state, asset_id)
+	state.unallocated_funds -= amount_cents
+	state.allocated_by_asset[asset_id] = previous + amount_cents
 	state.match_started = true
 	state.total_value = _compute_total_value(state)
-	print("GameManager: allocated $%d to %s (unallocated=$%d)" % [amount, asset_id, state.unallocated_funds])
+	print("GameManager: allocated %s to %s (unallocated=%s)" % [_format_currency(amount_cents), asset_id, _format_currency(state.unallocated_funds)])
 	return true
 
 
@@ -219,15 +241,17 @@ func reallocate(from_asset_id: String, to_asset_id: String, amount: int) -> bool
 		return false
 	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
 		state.allocated_by_asset = {}
-	var from_current := int(state.allocated_by_asset.get(from_asset_id, 0))
-	var to_current := int(state.allocated_by_asset.get(to_asset_id, 0))
-	if from_current < amount:
-		print("GameManager: reallocate skipped (requested=%d, available=%d from %s)" % [amount, from_current, from_asset_id])
+	_ensure_state_currency_in_cents(state)
+	var amount_cents := _dollars_to_cents(amount)
+	var from_current := _get_allocated_cents(state, from_asset_id)
+	var to_current := _get_allocated_cents(state, to_asset_id)
+	if from_current < amount_cents:
+		print("GameManager: reallocate skipped (requested=%s, available=%s from %s)" % [_format_currency(amount_cents), _format_currency(from_current), from_asset_id])
 		return false
-	state.allocated_by_asset[from_asset_id] = from_current - amount
-	state.allocated_by_asset[to_asset_id] = to_current + amount
+	state.allocated_by_asset[from_asset_id] = from_current - amount_cents
+	state.allocated_by_asset[to_asset_id] = to_current + amount_cents
 	state.total_value = _compute_total_value(state)
-	print("GameManager: reallocated $%d from %s to %s" % [amount, from_asset_id, to_asset_id])
+	print("GameManager: reallocated %s from %s to %s" % [_format_currency(amount_cents), from_asset_id, to_asset_id])
 	return true
 
 
@@ -237,6 +261,7 @@ func _apply_month_step() -> bool:
 	var state := run_state as RunState
 	if state == null:
 		return false
+	_ensure_state_currency_in_cents(state)
 	if state.current_month >= MONTHS_PER_YEAR:
 		return false
 	if not _has_match_started(state):
@@ -251,6 +276,8 @@ func _apply_month_step() -> bool:
 	_ensure_behavior_matrix_loaded()
 
 	_apply_monthly_indicator_drift(state.current_month)
+
+	_ensure_settings_loaded()
 
 	var resolver_result := MonthResolverUtil.resolve_month_step(
 		_behavior_matrix,
@@ -267,13 +294,13 @@ func _apply_month_step() -> bool:
 		new_allocated = state.allocated_by_asset
 	state.allocated_by_asset = new_allocated
 
-	var new_total_value: int = int(resolver_result.get("total_value", state.total_value if state.total_value != null else 0))
+	var new_total_value: int = int(round(resolver_result.get("total_value", state.total_value if state.total_value != null else 0)))
 	if typeof(resolver_result.get("total_value", null)) == TYPE_NIL or (typeof(resolver_result.get("total_value", null)) != TYPE_INT and typeof(resolver_result.get("total_value", null)) != TYPE_FLOAT):
 		new_total_value = _compute_total_value(state, new_allocated, state.unallocated_funds)
 	state.total_value = new_total_value
 
 	state.current_month += 1
-	print("GameManager: month advanced -> %d total=%d unallocated=%d" % [state.current_month, state.total_value, state.unallocated_funds])
+	print("GameManager: month advanced -> %d total=%s unallocated=%s" % [state.current_month, _format_currency(state.total_value), _format_currency(state.unallocated_funds)])
 	return true
 
 
@@ -452,6 +479,71 @@ func _parse_int_value(value) -> int:
 		if text.is_valid_int():
 			return int(text)
 	return 0
+
+
+func _dollars_to_cents(value) -> int:
+	if typeof(value) == TYPE_FLOAT:
+		return int(round(value * CENTS_PER_DOLLAR))
+	if typeof(value) == TYPE_INT:
+		return int(value) * CENTS_PER_DOLLAR
+	if typeof(value) == TYPE_STRING:
+		var parsed := _parse_int_value(value)
+		return parsed * CENTS_PER_DOLLAR
+	if value == null:
+		return 0
+	return int(value) * CENTS_PER_DOLLAR
+
+
+func _cents_to_whole_dollars(cents: int) -> int:
+	return int(round(float(cents) / CENTS_PER_DOLLAR))
+
+
+func _format_currency(cents: int) -> String:
+	var normalized := _get_normalized_play_difficulty()
+	var dollars_value := float(cents) / CENTS_PER_DOLLAR
+	if normalized == "hard":
+		return "$%.2f" % [dollars_value]
+	return "$%d" % _cents_to_whole_dollars(cents)
+
+
+func _get_normalized_play_difficulty() -> String:
+	_ensure_settings_loaded()
+	var diff_text: String = _settings.difficulty if _settings else "normal"
+	var normalized := diff_text.to_lower()
+	if normalized == "medium":
+		normalized = "normal"
+	if normalized != "easy" and normalized != "normal" and normalized != "hard":
+		normalized = "normal"
+	return normalized
+
+
+func _ensure_state_currency_in_cents(state: RunState) -> void:
+	if state == null:
+		return
+	if state.currency_in_cents:
+		return
+	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
+		state.allocated_by_asset = {}
+	var converted_allocations: Dictionary = {}
+	for asset_id in state.allocated_by_asset.keys():
+		converted_allocations[asset_id] = _dollars_to_cents(state.allocated_by_asset.get(asset_id, 0))
+	state.allocated_by_asset = converted_allocations
+	state.unallocated_funds = _dollars_to_cents(state.unallocated_funds)
+	state.total_funds = _dollars_to_cents(state.total_funds)
+	var raw_total_value: Variant = state.total_value
+	if raw_total_value == null:
+		raw_total_value = _compute_total_value(state, converted_allocations, state.unallocated_funds)
+	state.total_value = _dollars_to_cents(raw_total_value)
+	state.currency_in_cents = true
+
+
+func _get_allocated_cents(state: RunState, asset_id: String) -> int:
+	if state == null or asset_id == "":
+		return 0
+	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
+		state.allocated_by_asset = {}
+		return 0
+	return int(state.allocated_by_asset.get(asset_id, 0))
 
 
 func _generate_run_id(prefix: String) -> String:
@@ -894,6 +986,7 @@ func _rand_between_values(a: float, b: float, seed_value: int) -> float:
 func _has_match_started(state: RunState) -> bool:
 	if state == null:
 		return false
+	_ensure_state_currency_in_cents(state)
 	var started: bool = state.match_started
 	var reduced_unallocated := int(state.unallocated_funds) < int(state.total_funds)
 	var allocated_any := false
@@ -917,10 +1010,10 @@ func _compute_total_value(state: RunState, allocations: Variant = null, unalloca
 	elif state.allocated_by_asset != null and typeof(state.allocated_by_asset) == TYPE_DICTIONARY:
 		allocation_dict = state.allocated_by_asset
 
-	var unallocated_value := int(unallocated_override) if unallocated_override != null else int(state.unallocated_funds)
+	var unallocated_value := int(round(unallocated_override)) if unallocated_override != null else int(round(state.unallocated_funds))
 	var total := unallocated_value
 	for value in allocation_dict.values():
-		total += int(value)
+		total += int(round(value))
 	return int(total)
 
 

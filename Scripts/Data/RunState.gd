@@ -14,6 +14,7 @@ class_name RunState
 @export var current_indicator_levels: Dictionary = {}
 @export var current_indicator_percents: Dictionary = {}
 @export var indicator_momentum: Dictionary = {}
+@export var currency_in_cents: bool = false
 
 
 func reset_history() -> void:

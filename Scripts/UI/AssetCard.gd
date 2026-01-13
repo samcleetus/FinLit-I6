@@ -38,7 +38,7 @@ func apply_asset(asset: Asset) -> void:
 	if _image:
 		_image.texture = asset.icon
 	if _value_label:
-		_value_label.text = "$0"
+		_value_label.text = GameManager.format_currency(0)
 	set_selected(false)
 	set_interactable(true)
 	print("AssetCard apply_asset -> %s" % asset_id)
@@ -52,7 +52,7 @@ func clear_asset() -> void:
 	if _image:
 		_image.texture = null
 	if _value_label:
-		_value_label.text = "$0"
+		_value_label.text = GameManager.format_currency(0)
 	set_selected(false)
 
 

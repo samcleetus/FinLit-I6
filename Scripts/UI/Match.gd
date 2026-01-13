@@ -165,15 +165,16 @@ func _refresh_allocation_labels() -> void:
 		var asset_id := _get_asset_id(asset_node)
 		if asset_id == "":
 			continue
-		var allocated: int = GameManager.get_allocated_for(asset_id)
-		value_label.text = "$%d" % allocated
-		log_values.append("%s=$%d" % [asset_id, allocated])
+		var allocated_cents: int = GameManager.get_allocated_for_cents(asset_id)
+		var allocated_text := GameManager.format_currency(allocated_cents)
+		value_label.text = allocated_text
+		log_values.append("%s=%s" % [asset_id, allocated_text])
 	if _total_value_label:
-		var total_value: int = GameManager.get_total_value()
-		_total_value_label.text = "Total Value: $%d" % total_value
+		var total_value_cents: int = GameManager.get_total_value_cents()
+		_total_value_label.text = "Total Value: %s" % GameManager.format_currency(total_value_cents)
 	if _unallocated_label:
-		var unallocated: int = GameManager.get_unallocated_funds()
-		_unallocated_label.text = "Unallocated Funds: $%d" % unallocated
+		var unallocated_cents: int = GameManager.get_unallocated_funds_cents()
+		_unallocated_label.text = "Unallocated Funds: %s" % GameManager.format_currency(unallocated_cents)
 	print("Match: updated value labels %s" % ", ".join(log_values))
 	_update_month_label()
 

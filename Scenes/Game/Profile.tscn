@@ -1,10 +1,11 @@
-[gd_scene load_steps=10 format=3 uid="uid://l4p1oit7vlpt"]
+[gd_scene load_steps=11 format=3 uid="uid://l4p1oit7vlpt"]
 
 [ext_resource type="Script" path="res://Scripts/UI/Profile.gd" id="1_g5ayh"]
-[ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_rp6d8"]
 [ext_resource type="Texture2D" uid="uid://bkufwj8ahoe4w" path="res://Assets/Images/UI/background.png" id="2_57fsh"]
 [ext_resource type="Texture2D" uid="uid://cbb0hko5ah6ge" path="res://Assets/Images/UI/MainMenuButton.png" id="4_p557p"]
+[ext_resource type="Texture2D" uid="uid://6ksqt2cf5qei" path="res://Assets/Images/UI/CollectionButton.png" id="5_3dspi"]
 [ext_resource type="Texture2D" uid="uid://bgvj1j6scj43j" path="res://Assets/Images/UI/SettingsButton.png" id="5_sjujq"]
+[ext_resource type="Texture2D" uid="uid://bx1uj2n58dmow" path="res://Assets/Images/UI/ProfileButton.png" id="6_2r1qs"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_numfs"]
 
@@ -65,7 +66,7 @@ theme_override_constants/separation = 50
 custom_minimum_size = Vector2(400, 400)
 layout_mode = 2
 size_flags_horizontal = 4
-texture = ExtResource("1_rp6d8")
+texture = ExtResource("6_2r1qs")
 stretch_mode = 4
 
 [node name="StatRow1" type="HBoxContainer" parent="ContentVBox"]
@@ -130,7 +131,7 @@ expand_icon = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_kipis")
-icon = ExtResource("1_rp6d8")
+icon = ExtResource("5_3dspi")
 flat = true
 icon_alignment = 1
 expand_icon = true
@@ -140,7 +141,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_v7jst")
 disabled = true
-icon = ExtResource("1_rp6d8")
+icon = ExtResource("6_2r1qs")
 flat = true
 icon_alignment = 1
 expand_icon = true

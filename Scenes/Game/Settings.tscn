@@ -1,9 +1,10 @@
-[gd_scene load_steps=12 format=3 uid="uid://b1kp1dg4htqos"]
+[gd_scene load_steps=13 format=3 uid="uid://b1kp1dg4htqos"]
 
 [ext_resource type="Script" path="res://Scripts/UI/Settings.gd" id="1_c7155"]
-[ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_lx8ap"]
 [ext_resource type="Texture2D" uid="uid://bkufwj8ahoe4w" path="res://Assets/Images/UI/background.png" id="2_vcu7i"]
+[ext_resource type="Texture2D" uid="uid://6ksqt2cf5qei" path="res://Assets/Images/UI/CollectionButton.png" id="4_atc8x"]
 [ext_resource type="Texture2D" uid="uid://cbb0hko5ah6ge" path="res://Assets/Images/UI/MainMenuButton.png" id="4_rn465"]
+[ext_resource type="Texture2D" uid="uid://bx1uj2n58dmow" path="res://Assets/Images/UI/ProfileButton.png" id="5_8be8v"]
 [ext_resource type="Texture2D" uid="uid://bgvj1j6scj43j" path="res://Assets/Images/UI/SettingsButton.png" id="5_8dsvu"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_bwr45"]
@@ -164,7 +165,7 @@ expand_icon = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_7r4k3")
-icon = ExtResource("1_lx8ap")
+icon = ExtResource("4_atc8x")
 flat = true
 icon_alignment = 1
 expand_icon = true
@@ -173,7 +174,7 @@ expand_icon = true
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/focus = SubResource("StyleBoxEmpty_43d86")
-icon = ExtResource("1_lx8ap")
+icon = ExtResource("5_8be8v")
 flat = true
 icon_alignment = 1
 expand_icon = true

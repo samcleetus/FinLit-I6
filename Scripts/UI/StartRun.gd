@@ -4,7 +4,7 @@ const AssetCardScenePath := "res://Scenes/UI/AssetCard.tscn"
 const AssetDBPath := "res://Resources/AssetDB.tres"
 const GRID_CARD_SCALE := 1.25
 const GRID_CARD_DEFAULT_SIZE := Vector2(250, 350)
-#Test
+
 
 const HAND_SIZE := 4
 
@@ -250,6 +250,9 @@ func _refresh_slots() -> void:
 			slot.set_value_visible(false)
 		if slot.has_method("set_selected"):
 			slot.set_selected(true)
+		var is_locked := i < slot_lock_years_remaining.size() and slot_lock_years_remaining[i] > 0
+		if slot.has_method("set_locked"):
+			slot.set_locked(is_locked)
 		_disable_slot_interaction(slot)
 
 
@@ -321,6 +324,8 @@ func _clear_slot_card(slot: Node) -> void:
 		slot.set_value_visible(false)
 	if slot.has_method("set_selected"):
 		slot.set_selected(false)
+	if slot.has_method("set_locked"):
+		slot.set_locked(false)
 	_disable_slot_interaction(slot)
 
 

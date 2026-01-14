@@ -17,6 +17,7 @@ var _outline_color: Color = Color.WHITE
 var _outline_thickness: float = 2.0
 var _outline_margin: float = 4.0
 var _name_font_size_default: int = 25
+var _locked_overlay: TextureRect
 
 
 func _ready() -> void:
@@ -40,6 +41,7 @@ func apply_asset(asset: Asset) -> void:
 	if _value_label:
 		_value_label.text = GameManager.format_currency(0)
 	set_selected(false)
+	set_locked(false)
 	set_interactable(true)
 	print("AssetCard apply_asset -> %s" % asset_id)
 
@@ -54,6 +56,7 @@ func clear_asset() -> void:
 	if _value_label:
 		_value_label.text = GameManager.format_currency(0)
 	set_selected(false)
+	set_locked(false)
 
 
 func set_selected(is_selected: bool) -> void:
@@ -80,6 +83,12 @@ func set_icon_scale(scale_factor: float) -> void:
 	_ensure_nodes()
 	if _image:
 		_image.scale = _base_image_scale * scale_factor
+
+
+func set_locked(is_locked: bool) -> void:
+	_ensure_nodes()
+	if _locked_overlay:
+		_locked_overlay.visible = is_locked
 
 
 func _on_pressed() -> void:
@@ -118,6 +127,8 @@ func _ensure_nodes() -> void:
 		_value_label = get_node_or_null("AssetVBox/AssetValueLabel")
 	if _vbox == null:
 		_vbox = get_node_or_null("AssetVBox") as Control
+	if _locked_overlay == null:
+		_locked_overlay = get_node_or_null("AssetVBox/AssetImage/LockedOverlay") as TextureRect
 	if _image and not _base_image_scale_set:
 		_base_image_scale = _image.scale
 		_base_image_scale_set = true

@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3 uid="uid://bhmdobeuhceae"]
+[gd_scene load_steps=5 format=3 uid="uid://bhmdobeuhceae"]
 
 [ext_resource type="Texture2D" uid="uid://d1jyq6h51ma0r" path="res://Assets/Images/Animals/Giraffe.png" id="1_om4de"]
 [ext_resource type="Script" path="res://Scripts/UI/AssetCard.gd" id="1_y8jg7"]
+[ext_resource type="Texture2D" uid="uid://dudnowk2glm6g" path="res://Assets/Images/UI/AssetLocked.png" id="2_yq6aa"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_upab2"]
 
@@ -31,6 +32,19 @@ layout_mode = 2
 size_flags_vertical = 3
 texture = ExtResource("1_om4de")
 expand_mode = 5
+
+[node name="LockedOverlay" type="TextureRect" parent="AssetVBox/AssetImage"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_yq6aa")
+expand_mode = 5
+stretch_mode = 4
 
 [node name="AssetNameLabel" type="Label" parent="AssetVBox"]
 layout_mode = 2

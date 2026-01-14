@@ -1,7 +1,8 @@
-[gd_scene load_steps=6 format=3 uid="uid://ckgd14v4c8j6u"]
+[gd_scene load_steps=7 format=3 uid="uid://ckgd14v4c8j6u"]
 
 [ext_resource type="Script" path="res://Scripts/UI/Boot.gd" id="1_yxcjx"]
 [ext_resource type="Texture2D" uid="uid://bkufwj8ahoe4w" path="res://Assets/Images/UI/background.png" id="2_5reyy"]
+[ext_resource type="Texture2D" uid="uid://d4mygy4hg3w76" path="res://Assets/Images/UI/StartButton.png" id="3_llvcv"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_0gmtf"]
 
@@ -133,4 +134,5 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_font_sizes/font_size = 50
 theme_override_styles/focus = SubResource("StyleBoxEmpty_nlxqw")
-text = "START"
+icon = ExtResource("3_llvcv")
+flat = true

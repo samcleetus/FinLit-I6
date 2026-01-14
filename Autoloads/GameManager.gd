@@ -723,7 +723,7 @@ func _initialize_hand_for_new_run(state: RunState, chosen_asset_ids: Array[Strin
 		if asset_id == "":
 			continue
 		var duration := _get_asset_duration_years(asset_id)
-		locks[i] = max(duration - 1, 0)
+		locks[i] = max(duration, 0)
 		if not state.allocated_by_asset.has(asset_id):
 			state.allocated_by_asset[asset_id] = 0
 	state.hand_asset_ids = normalized
@@ -761,7 +761,7 @@ func _apply_hand_selection_for_run(state: RunState, hand_asset_ids: Array[String
 		if asset_id == "":
 			continue
 		var existing_lock := previous_locks[i] if i < previous_locks.size() else 0
-		var lock_value: int = existing_lock if existing_lock > 0 and asset_id == previous_hand[i] else max(_get_asset_duration_years(asset_id) - 1, 0)
+		var lock_value: int = existing_lock if existing_lock > 0 and asset_id == previous_hand[i] else max(_get_asset_duration_years(asset_id), 0)
 		new_locks[i] = max(lock_value, 0)
 		if not new_allocations.has(asset_id):
 			new_allocations[asset_id] = 0

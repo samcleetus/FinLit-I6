@@ -15,6 +15,7 @@ class_name RunState
 @export var current_indicator_percents: Dictionary = {}
 @export var indicator_momentum: Dictionary = {}
 @export var currency_in_cents: bool = false
+@export var year_start_total_cents: int = 0
 
 
 func reset_history() -> void:

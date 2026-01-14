@@ -4,7 +4,6 @@ const AppSettingsResource = preload("res://Scripts/Data/AppSettings.gd")
 const RunStateResource = preload("res://Scripts/Data/RunState.gd")
 const ProfileStatsResource = preload("res://Scripts/Data/ProfileStats.gd")
 const ProfileViewModelResource = preload("res://Scripts/ViewModels/ProfileViewModel.gd")
-const ProfileViewModel = preload("res://Scripts/ViewModels/ProfileViewModel.gd")
 const PersistenceUtil = preload("res://Scripts/Systems/Persistence.gd")
 const MonthResolverUtil = preload("res://Scripts/Game/MonthResolver.gd")
 const IndicatorDBPath := "res://Resources/IndicatorDB.tres"
@@ -32,7 +31,7 @@ var current_year_scenario: YearScenario = null
 var scenario_config: ScenarioGeneratorConfig = null
 var run_seed: int = 0
 var _behavior_matrix: BehaviorMatrix = null
-var _profile_stats: Object = null
+var _profile_stats: ProfileStats = null
 var _run_completion_recorded: bool = false
 
 var _scene_paths := {
@@ -226,7 +225,7 @@ func allocate_to_asset(asset_id: String, _amount: int) -> bool:
 	state.allocated_by_asset[asset_id] = previous + move_cents
 	state.match_started = true
 	state.total_value = _compute_total_value(state)
-	_record_allocation_stat()
+	_record_allocation_stat(asset_id)
 	print("GameManager: allocated %s to %s (unallocated=%s)" % [_format_currency(move_cents), asset_id, _format_currency(state.unallocated_funds)])
 	return true
 
@@ -315,6 +314,7 @@ func _apply_month_step() -> bool:
 	_record_indicator_exposure(indicator_ids)
 
 	state.current_month += 1
+	_maybe_record_year_result(state)
 	var time_horizon := _settings.time_horizon if _settings else 0
 	var run_finished: bool = state.current_month >= MONTHS_PER_YEAR and current_year_index + 1 >= time_horizon
 	if run_finished:
@@ -504,18 +504,12 @@ func _ensure_settings_loaded() -> void:
 
 func _load_profile_stats() -> void:
 	_profile_stats = PersistenceUtil.load_profile_stats()
-	if _profile_stats == null:
-		_profile_stats = ProfileStatsResource.new()
-	if _profile_stats.indicator_exposure_counts == null or typeof(_profile_stats.indicator_exposure_counts) != TYPE_DICTIONARY:
-		_profile_stats.indicator_exposure_counts = {}
+	_normalize_profile_stats_fields()
 	print("GameManager: profile stats loaded")
 
 
 func _persist_profile_stats() -> void:
-	if _profile_stats == null:
-		_profile_stats = ProfileStatsResource.new()
-	if _profile_stats.indicator_exposure_counts == null or typeof(_profile_stats.indicator_exposure_counts) != TYPE_DICTIONARY:
-		_profile_stats.indicator_exposure_counts = {}
+	_normalize_profile_stats_fields()
 	PersistenceUtil.save_profile_stats(_profile_stats)
 	print("GameManager: profile stats saved")
 
@@ -523,8 +517,27 @@ func _persist_profile_stats() -> void:
 func _ensure_profile_stats_loaded() -> void:
 	if _profile_stats == null:
 		_load_profile_stats()
-	elif _profile_stats.indicator_exposure_counts == null or typeof(_profile_stats.indicator_exposure_counts) != TYPE_DICTIONARY:
+	else:
+		_normalize_profile_stats_fields()
+
+
+func _normalize_profile_stats_fields() -> void:
+	if _profile_stats == null:
+		_profile_stats = ProfileStatsResource.new()
+	if _profile_stats.indicator_exposure_counts == null or typeof(_profile_stats.indicator_exposure_counts) != TYPE_DICTIONARY:
 		_profile_stats.indicator_exposure_counts = {}
+	if _profile_stats.asset_allocation_counts == null or typeof(_profile_stats.asset_allocation_counts) != TYPE_DICTIONARY:
+		_profile_stats.asset_allocation_counts = {}
+	if _profile_stats.favorite_asset_id == null:
+		_profile_stats.favorite_asset_id = ""
+	if typeof(_profile_stats.favorite_asset_id) != TYPE_STRING:
+		_profile_stats.favorite_asset_id = str(_profile_stats.favorite_asset_id)
+	if _profile_stats.biggest_year_gain_cents == null:
+		_profile_stats.biggest_year_gain_cents = 0
+	if _profile_stats.biggest_year_loss_cents == null:
+		_profile_stats.biggest_year_loss_cents = 0
+	if _profile_stats.data_version < 2:
+		_profile_stats.data_version = 2
 
 
 func _parse_int_value(value) -> int:
@@ -595,6 +608,8 @@ func _ensure_state_currency_in_cents(state: RunState) -> void:
 	if raw_total_value == null:
 		raw_total_value = _compute_total_value(state, converted_allocations, state.unallocated_funds)
 	state.total_value = _dollars_to_cents(raw_total_value)
+	if "year_start_total_cents" in state:
+		state.year_start_total_cents = _dollars_to_cents(state.year_start_total_cents)
 	state.currency_in_cents = true
 
 
@@ -717,6 +732,8 @@ func prepare_next_year() -> void:
 		return
 
 	run_state.current_month = 0
+	_ensure_state_currency_in_cents(run_state)
+	run_state.year_start_total_cents = _compute_total_value(run_state)
 
 	var available_indicator_ids := _get_available_indicator_ids()
 	var settings := _settings
@@ -832,6 +849,22 @@ func _build_asset_slot_view_models() -> Array[AssetSlotViewModel]:
 		slots.append(slot_view_model)
 
 	return slots
+
+
+func _resolve_asset_display_name(asset_id: String) -> String:
+	if asset_id == "":
+		return ""
+	var asset_db := load(AssetDBPath)
+	if asset_db == null or not asset_db.has_method("get_by_id"):
+		return asset_id
+	var asset: Object = asset_db.get_by_id(asset_id)
+	if asset == null:
+		return asset_id
+	if "display_name" in asset and asset.display_name != null:
+		var display_name := str(asset.display_name)
+		if display_name.strip_edges() != "":
+			return display_name
+	return asset_id
 
 
 func _initialize_indicator_state_for_year(scenario: YearScenario) -> void:
@@ -1079,13 +1112,37 @@ func _compute_total_value(state: RunState, allocations: Variant = null, unalloca
 	return int(total)
 
 
-func _record_allocation_stat() -> void:
+func _record_allocation_stat(asset_id: String) -> void:
 	if session_mode != SessionMode.RUN:
 		return
 	_ensure_profile_stats_loaded()
 	_profile_stats.total_allocations_made += 1
+	if _profile_stats.asset_allocation_counts == null or typeof(_profile_stats.asset_allocation_counts) != TYPE_DICTIONARY:
+		_profile_stats.asset_allocation_counts = {}
+	if asset_id != "":
+		var previous := int(_profile_stats.asset_allocation_counts.get(asset_id, 0))
+		var new_count := previous + 1
+		_profile_stats.asset_allocation_counts[asset_id] = new_count
+		_update_favorite_asset(asset_id, new_count)
 	print("GameManager: allocation stat incremented")
 	_persist_profile_stats()
+
+
+func _update_favorite_asset(asset_id: String, new_count: int) -> void:
+	if asset_id == "":
+		return
+	var current_id: String = _profile_stats.favorite_asset_id if _profile_stats != null else ""
+	var counts: Dictionary = _profile_stats.asset_allocation_counts if _profile_stats != null else {}
+	var current_count := -1
+	if current_id != "" and typeof(counts) == TYPE_DICTIONARY:
+		current_count = int(counts.get(current_id, -1))
+	if current_id == "":
+		_profile_stats.favorite_asset_id = asset_id
+		print("GameManager: favorite asset updated to %s" % asset_id)
+		return
+	if new_count > current_count:
+		_profile_stats.favorite_asset_id = asset_id
+		print("GameManager: favorite asset updated to %s" % asset_id)
 
 
 func _record_indicator_exposure(indicator_ids: Array) -> void:
@@ -1103,6 +1160,31 @@ func _record_indicator_exposure(indicator_ids: Array) -> void:
 		var prev := int(_profile_stats.indicator_exposure_counts.get(normalized_id, 0))
 		_profile_stats.indicator_exposure_counts[normalized_id] = prev + 1
 	_persist_profile_stats()
+
+
+func _maybe_record_year_result(state: RunState) -> void:
+	if session_mode != SessionMode.RUN:
+		return
+	if state == null:
+		return
+	if state.current_month < MONTHS_PER_YEAR:
+		return
+	_ensure_profile_stats_loaded()
+	_ensure_state_currency_in_cents(state)
+	var start_total := int(state.year_start_total_cents) if "year_start_total_cents" in state else _compute_total_value(state)
+	var end_total := _compute_total_value(state)
+	var delta := end_total - start_total
+	var updated := false
+	if delta > _profile_stats.biggest_year_gain_cents:
+		_profile_stats.biggest_year_gain_cents = delta
+		updated = true
+		print("GameManager: biggest yearly gain updated to %s" % delta)
+	if delta < _profile_stats.biggest_year_loss_cents:
+		_profile_stats.biggest_year_loss_cents = delta
+		updated = true
+		print("GameManager: biggest yearly loss updated to %s" % delta)
+	if updated:
+		_persist_profile_stats()
 
 
 func _update_profile_stats_for_run_completion() -> void:

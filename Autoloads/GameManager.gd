@@ -100,8 +100,7 @@ func start_new_run(chosen_asset_ids: Array[String]) -> bool:
 	state.unallocated_funds = state.total_funds
 	state.currency_in_cents = true
 	state.allocated_by_asset = {}
-	for asset_id in state.chosen_asset_ids:
-		state.allocated_by_asset[asset_id] = 0
+	_initialize_hand_for_new_run(state, chosen_asset_ids)
 	run_state = state
 	current_year_index = 0
 	run_seed = abs(hash(state.run_id))
@@ -110,6 +109,20 @@ func start_new_run(chosen_asset_ids: Array[String]) -> bool:
 		_settings.mode = "normal"
 	print("GameManager: start_new_run -> mode=%s run_id=%s chosen_assets=%s" % [_session_mode_to_string(session_mode), run_state.run_id, run_state.chosen_asset_ids])
 	prepare_next_year()
+	return true
+
+
+func apply_hand_selection(hand_asset_ids: Array[String]) -> bool:
+	if session_mode != SessionMode.RUN or run_state == null:
+		print("GameManager: apply_hand_selection skipped (no active run)")
+		return false
+	var state := run_state as RunState
+	if state == null:
+		print("GameManager: apply_hand_selection skipped (run_state missing)")
+		return false
+	_ensure_state_currency_in_cents(state)
+	_ensure_hand_initialized(state)
+	_apply_hand_selection_for_run(state, hand_asset_ids)
 	return true
 
 
@@ -144,6 +157,7 @@ func get_run_state() -> Object:
 	print("GameManager: get_run_state called -> session_mode=%s run_id=%s" % [_session_mode_to_string(session_mode), id_text])
 	if run_state is RunState:
 		_ensure_state_currency_in_cents(run_state)
+		_ensure_hand_initialized(run_state)
 	return run_state
 
 
@@ -613,6 +627,32 @@ func _ensure_state_currency_in_cents(state: RunState) -> void:
 	state.currency_in_cents = true
 
 
+func _ensure_hand_initialized(state: RunState) -> void:
+	if state == null:
+		return
+	if state.hand_asset_ids == null or not (state.hand_asset_ids is PackedStringArray) or state.hand_asset_ids.size() != 4:
+		var current := PackedStringArray(["", "", "", ""])
+		if state.hand_asset_ids != null and (state.hand_asset_ids is PackedStringArray):
+			for i in min(state.hand_asset_ids.size(), 4):
+				current[i] = str(state.hand_asset_ids[i])
+		state.hand_asset_ids = current
+	if state.hand_lock_years_remaining == null or not (state.hand_lock_years_remaining is PackedInt32Array) or state.hand_lock_years_remaining.size() != 4:
+		var current_locks := PackedInt32Array([0, 0, 0, 0])
+		if state.hand_lock_years_remaining != null and (state.hand_lock_years_remaining is PackedInt32Array):
+			for i in min(state.hand_lock_years_remaining.size(), 4):
+				current_locks[i] = int(state.hand_lock_years_remaining[i])
+		state.hand_lock_years_remaining = current_locks
+
+
+func _packed_to_array(values: PackedStringArray) -> Array[String]:
+	var result: Array[String] = []
+	if values == null:
+		return result
+	for value in values:
+		result.append(str(value))
+	return result
+
+
 func _get_allocated_cents(state: RunState, asset_id: String) -> int:
 	if state == null or asset_id == "":
 		return 0
@@ -625,6 +665,102 @@ func _get_allocated_cents(state: RunState, asset_id: String) -> int:
 func _generate_run_id(prefix: String) -> String:
 	var timestamp := Time.get_unix_time_from_system()
 	return "%s_%s_%s" % [prefix, _run_counter, timestamp]
+
+
+func _get_asset_duration_years(asset_id: String) -> int:
+	if asset_id == "":
+		return 0
+	var asset_db := load(AssetDBPath)
+	if asset_db == null or not asset_db.has_method("get_by_id"):
+		push_warning("GameManager: AssetDB missing or invalid at %s; duration unavailable." % AssetDBPath)
+		return 0
+	var asset: Object = asset_db.get_by_id(asset_id)
+	if asset == null:
+		push_warning("GameManager: asset '%s' not found in AssetDB while reading duration." % asset_id)
+		return 0
+	if "duration_years" in asset:
+		return max(int(asset.duration_years), 0)
+	return 0
+
+
+func _initialize_hand_for_new_run(state: RunState, chosen_asset_ids: Array[String]) -> void:
+	_ensure_hand_initialized(state)
+	var normalized := PackedStringArray(["", "", "", ""])
+	for i in 4:
+		if i < chosen_asset_ids.size():
+			normalized[i] = str(chosen_asset_ids[i])
+	var locks := PackedInt32Array([0, 0, 0, 0])
+	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
+		state.allocated_by_asset = {}
+	for i in normalized.size():
+		var asset_id := normalized[i]
+		if asset_id == "":
+			continue
+		var duration := _get_asset_duration_years(asset_id)
+		locks[i] = max(duration, 0)
+		if not state.allocated_by_asset.has(asset_id):
+			state.allocated_by_asset[asset_id] = 0
+	state.hand_asset_ids = normalized
+	state.hand_lock_years_remaining = locks
+	state.chosen_asset_ids = _packed_to_array(normalized)
+	print("Run: init hand slots ids=%s locks=%s" % [normalized, locks])
+
+
+func _apply_hand_selection_for_run(state: RunState, hand_asset_ids: Array[String]) -> void:
+	_ensure_hand_initialized(state)
+	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
+		state.allocated_by_asset = {}
+	var normalized := PackedStringArray(["", "", "", ""])
+	for i in 4:
+		if i < hand_asset_ids.size():
+			normalized[i] = str(hand_asset_ids[i])
+	var previous_hand: PackedStringArray = state.hand_asset_ids.duplicate()
+	var previous_locks: PackedInt32Array = state.hand_lock_years_remaining.duplicate()
+	var new_locks := PackedInt32Array([0, 0, 0, 0])
+	var new_allocations: Dictionary = state.allocated_by_asset.duplicate()
+	var refunded_cents := 0
+	for i in previous_hand.size():
+		var prev_id := previous_hand[i]
+		if prev_id == "":
+			continue
+		var still_in_slot := i < normalized.size() and normalized[i] == prev_id
+		if still_in_slot:
+			continue
+		var prev_alloc := _get_allocated_cents(state, prev_id)
+		if prev_alloc > 0:
+			refunded_cents += prev_alloc
+		new_allocations.erase(prev_id)
+	for i in normalized.size():
+		var asset_id := normalized[i]
+		if asset_id == "":
+			continue
+		var existing_lock := previous_locks[i] if i < previous_locks.size() else 0
+		var lock_value := existing_lock if existing_lock > 0 and asset_id == previous_hand[i] else _get_asset_duration_years(asset_id)
+		new_locks[i] = max(lock_value, 0)
+		if not new_allocations.has(asset_id):
+			new_allocations[asset_id] = 0
+	state.unallocated_funds += refunded_cents
+	state.hand_asset_ids = normalized
+	state.hand_lock_years_remaining = new_locks
+	state.chosen_asset_ids = _packed_to_array(normalized)
+	state.allocated_by_asset = new_allocations
+	state.total_value = _compute_total_value(state)
+	state.year_start_total_cents = _compute_total_value(state)
+	state.match_started = false
+	print("Run: applied hand selection ids=%s locks=%s refunded=%s" % [normalized, new_locks, _format_currency(refunded_cents)])
+
+
+func _decrement_hand_locks(state: RunState) -> void:
+	if state == null:
+		return
+	_ensure_hand_initialized(state)
+	var locks: PackedInt32Array = state.hand_lock_years_remaining.duplicate()
+	for i in locks.size():
+		if locks[i] > 0:
+			locks[i] = max(locks[i] - 1, 0)
+	state.hand_lock_years_remaining = locks
+	state.chosen_asset_ids = _packed_to_array(state.hand_asset_ids)
+	print("Run: advance year -> year_index=%s locks=%s" % [state.current_year_index + 0, locks])
 
 
 func _session_mode_to_string(value: int) -> String:
@@ -712,12 +848,17 @@ func advance_year() -> bool:
 		print("GameManager: end of run reached (year %s)" % current_year_index)
 		_update_profile_stats_for_run_completion()
 		return false
-	current_year_index += 1
-	if run_state != null:
-		run_state.current_year_index = current_year_index
+	_advance_run_year()
 	prepare_next_year()
 	print("GameManager: advanced to year=%s" % current_year_index)
 	return true
+
+
+func _advance_run_year() -> void:
+	current_year_index += 1
+	if run_state != null:
+		run_state.current_year_index = current_year_index
+		_decrement_hand_locks(run_state)
 
 
 func prepare_next_year() -> void:
@@ -818,7 +959,11 @@ func _build_asset_slot_view_models() -> Array[AssetSlotViewModel]:
 	var state := run_state as RunState
 	var chosen_ids: Array[String] = []
 	if state != null:
-		chosen_ids = state.chosen_asset_ids.duplicate()
+		if typeof(state.hand_asset_ids) == TYPE_PACKED_STRING_ARRAY and state.hand_asset_ids != null:
+			for id in state.hand_asset_ids:
+				chosen_ids.append(str(id))
+		elif state.chosen_asset_ids != null:
+			chosen_ids = state.chosen_asset_ids.duplicate()
 	elif session_mode == SessionMode.RUN:
 		push_warning("GameManager: get_match_view_model called without a valid run_state; asset slots will be empty.")
 

@@ -15,7 +15,7 @@ run/main_scene="res://Scenes/Game/Boot.tscn"
 config/features=PackedStringArray("4.3", "Mobile")
 boot_splash/bg_color=Color(0.176471, 0.25098, 0.352941, 1)
 boot_splash/image="res://Assets/Icons/bootsplash.png"
-config/icon="res://Assets/Icons/temp_icon.png"
+config/icon="res://Assets/Icons/Icon2.png"
 
 [autoload]
 

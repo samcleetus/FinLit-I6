@@ -4,6 +4,7 @@ const AssetCardScenePath := "res://Scenes/UI/AssetCard.tscn"
 const AssetDBPath := "res://Resources/AssetDB.tres"
 const GRID_CARD_SCALE := 1.25
 const GRID_CARD_DEFAULT_SIZE := Vector2(250, 350)
+#Test
 
 const HAND_SIZE := 4
 

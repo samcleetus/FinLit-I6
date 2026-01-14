@@ -221,12 +221,24 @@ func _log_selection() -> void:
 func _on_start_pressed() -> void:
 	var chosen_ids: Array[String] = _build_chosen_ids()
 	var mode_text := "continuing" if _is_continuing_run else "new"
+	var state: RunState = GameManager.get_run_state()
+	var start_year: int = state.current_year_index if state else -1
+	var start_month: int = state.current_month if state else -1
 	print("StartRun: start pressed (%s) with assets=%s" % [mode_text, chosen_ids])
 	var started := false
 	if _is_continuing_run:
+		GameManager.ensure_run_ready_for_match()
+		state = GameManager.get_run_state()
+		start_year = state.current_year_index if state else start_year
+		start_month = state.current_month if state else start_month
+		print("StartRun: starting year=%s month=%s" % [start_year, start_month])
 		started = GameManager.apply_hand_selection(chosen_ids)
 	else:
 		started = GameManager.start_new_run(chosen_ids)
+		state = GameManager.get_run_state()
+		start_year = state.current_year_index if state else start_year
+		start_month = state.current_month if state else start_month
+		print("StartRun: starting year=%s month=%s" % [start_year, start_month])
 	print("StartRun: sent assets to GameManager -> started=%s" % started)
 	if started:
 		GameManager.go_to_match()

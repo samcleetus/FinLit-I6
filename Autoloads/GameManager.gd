@@ -285,6 +285,7 @@ func _apply_month_step() -> bool:
 		return false
 	_ensure_state_currency_in_cents(state)
 	if state.current_month >= MONTHS_PER_YEAR:
+		_complete_year_if_needed()
 		return false
 	if not _has_match_started(state):
 		return false
@@ -395,6 +396,22 @@ func get_profile_view_model() -> ProfileViewModel:
 	_ensure_profile_stats_loaded()
 	var show_cents := _get_normalized_play_difficulty() == "hard"
 	return ProfileViewModelResource.from_stats(_profile_stats, show_cents)
+
+
+func complete_year_if_needed() -> bool:
+	return _complete_year_if_needed()
+
+
+func ensure_run_ready_for_match() -> void:
+	if session_mode != SessionMode.RUN or run_state == null:
+		return
+	var state := run_state as RunState
+	if state == null:
+		return
+	if state.current_month >= MONTHS_PER_YEAR:
+		_complete_year_if_needed()
+	if state.current_month != 0:
+		state.current_month = 0
 
 
 func reset_profile_stats() -> void:
@@ -653,6 +670,15 @@ func _packed_to_array(values: PackedStringArray) -> Array[String]:
 	return result
 
 
+func _packed_ints_to_array(values: PackedInt32Array) -> Array[int]:
+	var result: Array[int] = []
+	if values == null:
+		return result
+	for value in values:
+		result.append(int(value))
+	return result
+
+
 func _get_allocated_cents(state: RunState, asset_id: String) -> int:
 	if state == null or asset_id == "":
 		return 0
@@ -859,6 +885,28 @@ func _advance_run_year() -> void:
 	if run_state != null:
 		run_state.current_year_index = current_year_index
 		_decrement_hand_locks(run_state)
+
+
+func _complete_year_if_needed() -> bool:
+	if session_mode != SessionMode.RUN or run_state == null:
+		return false
+	var state := run_state as RunState
+	if state == null:
+		return false
+	if state.current_month < MONTHS_PER_YEAR:
+		return false
+	_ensure_settings_loaded()
+	var time_horizon := _settings.time_horizon if _settings else 0
+	var is_final_year := current_year_index + 1 >= time_horizon
+	_advance_run_year()
+	if is_final_year:
+		state.current_month = 0
+		_update_profile_stats_for_run_completion()
+	else:
+		prepare_next_year()
+	var locks_array := _packed_ints_to_array(state.hand_lock_years_remaining)
+	print("Run: end_year -> year_index now %s, locks now %s, month reset to %s" % [state.current_year_index, locks_array, state.current_month])
+	return true
 
 
 func prepare_next_year() -> void:

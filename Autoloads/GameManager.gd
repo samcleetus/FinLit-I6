@@ -15,6 +15,9 @@ const REALLOC_STEP_CENTS := 5000
 const MONTHS_PER_YEAR := 12
 const DEFAULT_TOTAL_FUNDS := 10000
 const DEFAULT_TOTAL_FUNDS_CENTS := DEFAULT_TOTAL_FUNDS * CENTS_PER_DOLLAR
+const YEARLY_CONTRIBUTION_EASY_DOLLARS := 10000
+const YEARLY_CONTRIBUTION_NORMAL_DOLLARS := 8000
+const YEARLY_CONTRIBUTION_HARD_DOLLARS := 6000
 
 @warning_ignore("unused_signal")
 signal settings_changed(settings)
@@ -95,12 +98,15 @@ func start_new_run(chosen_asset_ids: Array[String]) -> bool:
 	state.match_started = false
 	state.chosen_asset_ids = chosen_asset_ids.duplicate()
 	state.reset_history()
-	state.total_funds = DEFAULT_TOTAL_FUNDS_CENTS
-	state.total_value = state.total_funds
-	state.unallocated_funds = state.total_funds
 	state.currency_in_cents = true
+	state.portfolio_cents_by_asset_id = {}
+	_ensure_portfolio_initialized(state)
+	_reset_unallocated_for_new_year(state)
+	state.total_value = _compute_total_value(state)
 	state.allocated_by_asset = {}
 	_initialize_hand_for_new_run(state, chosen_asset_ids)
+	state.total_value = _compute_total_value(state)
+	state.year_start_total_cents = state.total_value
 	run_state = state
 	current_year_index = 0
 	run_seed = abs(hash(state.run_id))
@@ -158,6 +164,7 @@ func get_run_state() -> Object:
 	if run_state is RunState:
 		_ensure_state_currency_in_cents(run_state)
 		_ensure_hand_initialized(run_state)
+		_ensure_portfolio_initialized(run_state)
 	return run_state
 
 
@@ -171,6 +178,17 @@ func get_unallocated_funds_cents() -> int:
 
 func get_unallocated_funds() -> int:
 	return _cents_to_whole_dollars(get_unallocated_funds_cents())
+
+
+func get_yearly_contribution_cents(difficulty: String = "") -> int:
+	var normalized := difficulty.to_lower() if difficulty != "" else _get_normalized_play_difficulty()
+	match normalized:
+		"easy":
+			return YEARLY_CONTRIBUTION_EASY_DOLLARS * CENTS_PER_DOLLAR
+		"hard":
+			return YEARLY_CONTRIBUTION_HARD_DOLLARS * CENTS_PER_DOLLAR
+		_:
+			return YEARLY_CONTRIBUTION_NORMAL_DOLLARS * CENTS_PER_DOLLAR
 
 
 func get_allocated_for_cents(asset_id: String) -> int:
@@ -191,9 +209,8 @@ func get_total_value_cents() -> int:
 	var state := run_state as RunState
 	if state == null:
 		return 0
-	if state.total_value == null:
-		state.total_value = _compute_total_value(state)
 	_ensure_state_currency_in_cents(state)
+	state.total_value = _compute_total_value(state)
 	return int(state.total_value)
 
 
@@ -228,15 +245,20 @@ func allocate_to_asset(asset_id: String, _amount: int) -> bool:
 		print("GameManager: allocate_to_asset skipped (run_state missing)")
 		return false
 	_ensure_state_currency_in_cents(state)
+	if not _is_asset_in_hand(state, asset_id):
+		print("GameManager: allocate_to_asset skipped (asset not in hand) -> %s" % asset_id)
+		return false
 	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
 		state.allocated_by_asset = {}
 	var move_cents: int = min(ALLOC_STEP_CENTS, int(state.unallocated_funds))
 	if move_cents <= 0:
 		print("GameManager: allocate_to_asset skipped (unallocated=%s)" % _format_currency(state.unallocated_funds))
 		return false
-	var previous := _get_allocated_cents(state, asset_id)
+	var previous := _get_portfolio_cents(state, asset_id)
 	state.unallocated_funds -= move_cents
-	state.allocated_by_asset[asset_id] = previous + move_cents
+	var updated := previous + move_cents
+	state.allocated_by_asset[asset_id] = updated
+	_set_portfolio_cents(state, asset_id, updated)
 	state.match_started = true
 	state.total_value = _compute_total_value(state)
 	_record_allocation_stat(asset_id)
@@ -255,22 +277,32 @@ func reallocate(from_asset_id: String, to_asset_id: String, _amount: int) -> boo
 	if state == null:
 		print("GameManager: reallocate skipped (run_state missing)")
 		return false
+	_ensure_state_currency_in_cents(state)
+	if not _is_asset_in_hand(state, from_asset_id) or not _is_asset_in_hand(state, to_asset_id):
+		print("GameManager: reallocate skipped (asset not in hand) -> %s to %s" % [from_asset_id, to_asset_id])
+		return false
 	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
 		state.allocated_by_asset = {}
-	_ensure_state_currency_in_cents(state)
-	var from_current := _get_allocated_cents(state, from_asset_id)
+	var from_current := _get_portfolio_cents(state, from_asset_id)
 	if from_current <= 0:
 		print("GameManager: reallocate skipped (empty from=%s holdings=%d move=0)" % [from_asset_id, from_current])
 		return false
 	var move_cents: int = min(REALLOC_STEP_CENTS, from_current)
-	var to_current := _get_allocated_cents(state, to_asset_id)
-	state.allocated_by_asset[from_asset_id] = from_current - move_cents
-	state.allocated_by_asset[to_asset_id] = to_current + move_cents
+	var to_current := _get_portfolio_cents(state, to_asset_id)
+	var new_from := from_current - move_cents
+	var new_to := to_current + move_cents
+	state.allocated_by_asset[from_asset_id] = new_from
+	state.allocated_by_asset[to_asset_id] = new_to
+	_set_portfolio_cents(state, from_asset_id, new_from)
+	_set_portfolio_cents(state, to_asset_id, new_to)
 	state.total_value = _compute_total_value(state)
+	if move_cents > 0:
+		state.match_started = true
 	if OS.is_debug_build():
 		var holdings_sum := 0
-		for value in state.allocated_by_asset.values():
-			holdings_sum += int(round(value))
+		if state.portfolio_cents_by_asset_id != null and typeof(state.portfolio_cents_by_asset_id) == TYPE_DICTIONARY:
+			for value in state.portfolio_cents_by_asset_id.values():
+				holdings_sum += int(round(value))
 		var check_total := int(round(state.unallocated_funds)) + holdings_sum
 		assert(check_total == int(round(state.total_value)))
 	print("GameManager: reallocated %s from %s to %s" % [_format_currency(move_cents), from_asset_id, to_asset_id])
@@ -290,8 +322,7 @@ func _apply_month_step() -> bool:
 	if not _has_match_started(state):
 		return false
 
-	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
-		state.allocated_by_asset = {}
+	var hand_allocations := _sync_hand_allocations_from_portfolio(state)
 
 	if current_year_scenario == null:
 		push_warning("GameManager: month step running without a current_year_scenario; skipping scenario effects.")
@@ -309,22 +340,21 @@ func _apply_month_step() -> bool:
 	var resolver_result := MonthResolverUtil.resolve_month_step(
 		_behavior_matrix,
 		current_year_scenario,
-		state.allocated_by_asset,
+		hand_allocations,
 		state.unallocated_funds,
 		state.current_month,
 		run_seed,
 		state.current_indicator_levels
 	)
 
-	var new_allocated: Dictionary = resolver_result.get("new_allocated_by_asset", state.allocated_by_asset) if typeof(resolver_result.get("new_allocated_by_asset", state.allocated_by_asset)) == TYPE_DICTIONARY else state.allocated_by_asset
+	var new_allocated: Dictionary = resolver_result.get("new_allocated_by_asset", hand_allocations) if typeof(resolver_result.get("new_allocated_by_asset", hand_allocations)) == TYPE_DICTIONARY else hand_allocations
 	if typeof(new_allocated) != TYPE_DICTIONARY:
-		new_allocated = state.allocated_by_asset
+		new_allocated = hand_allocations
+	for asset_id in new_allocated.keys():
+		_set_portfolio_cents(state, asset_id, int(round(new_allocated[asset_id])))
 	state.allocated_by_asset = new_allocated
 
-	var new_total_value: int = int(round(resolver_result.get("total_value", state.total_value if state.total_value != null else 0)))
-	if typeof(resolver_result.get("total_value", null)) == TYPE_NIL or (typeof(resolver_result.get("total_value", null)) != TYPE_INT and typeof(resolver_result.get("total_value", null)) != TYPE_FLOAT):
-		new_total_value = _compute_total_value(state, new_allocated, state.unallocated_funds)
-	state.total_value = new_total_value
+	state.total_value = _compute_total_value(state)
 
 	_record_indicator_exposure(indicator_ids)
 
@@ -412,6 +442,8 @@ func ensure_run_ready_for_match() -> void:
 		_complete_year_if_needed()
 	if state.current_month != 0:
 		state.current_month = 0
+	_sync_hand_allocations_from_portfolio(state)
+	state.total_value = _compute_total_value(state)
 
 
 func reset_profile_stats() -> void:
@@ -625,7 +657,9 @@ func _get_normalized_play_difficulty() -> String:
 func _ensure_state_currency_in_cents(state: RunState) -> void:
 	if state == null:
 		return
+	_ensure_portfolio_initialized(state)
 	if state.currency_in_cents:
+		_backfill_portfolio_from_allocations(state)
 		return
 	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
 		state.allocated_by_asset = {}
@@ -633,6 +667,13 @@ func _ensure_state_currency_in_cents(state: RunState) -> void:
 	for asset_id in state.allocated_by_asset.keys():
 		converted_allocations[asset_id] = _dollars_to_cents(state.allocated_by_asset.get(asset_id, 0))
 	state.allocated_by_asset = converted_allocations
+	if state.portfolio_cents_by_asset_id == null or typeof(state.portfolio_cents_by_asset_id) != TYPE_DICTIONARY:
+		state.portfolio_cents_by_asset_id = {}
+	else:
+		var converted_portfolio: Dictionary = {}
+		for asset_id in state.portfolio_cents_by_asset_id.keys():
+			converted_portfolio[asset_id] = _dollars_to_cents(state.portfolio_cents_by_asset_id.get(asset_id, 0))
+		state.portfolio_cents_by_asset_id = converted_portfolio
 	state.unallocated_funds = _dollars_to_cents(state.unallocated_funds)
 	state.total_funds = _dollars_to_cents(state.total_funds)
 	var raw_total_value: Variant = state.total_value
@@ -642,6 +683,7 @@ func _ensure_state_currency_in_cents(state: RunState) -> void:
 	if "year_start_total_cents" in state:
 		state.year_start_total_cents = _dollars_to_cents(state.year_start_total_cents)
 	state.currency_in_cents = true
+	_backfill_portfolio_from_allocations(state)
 
 
 func _ensure_hand_initialized(state: RunState) -> void:
@@ -659,6 +701,87 @@ func _ensure_hand_initialized(state: RunState) -> void:
 			for i in min(state.hand_lock_years_remaining.size(), 4):
 				current_locks[i] = int(state.hand_lock_years_remaining[i])
 		state.hand_lock_years_remaining = current_locks
+
+
+func _ensure_portfolio_initialized(state: RunState) -> void:
+	if state == null:
+		return
+	if state.portfolio_cents_by_asset_id == null or typeof(state.portfolio_cents_by_asset_id) != TYPE_DICTIONARY:
+		state.portfolio_cents_by_asset_id = {}
+	var asset_db := load(AssetDBPath)
+	if asset_db == null or not asset_db.has_method("get_all"):
+		push_warning("GameManager: cannot initialize portfolio, AssetDB missing or invalid at %s" % AssetDBPath)
+		return
+	for asset in asset_db.get_all():
+		if asset == null or asset.id == "":
+			continue
+		if "starting_unlocked" in asset and not asset.starting_unlocked:
+			continue
+		var asset_id := str(asset.id)
+		if not state.portfolio_cents_by_asset_id.has(asset_id):
+			state.portfolio_cents_by_asset_id[asset_id] = 0
+
+
+func _backfill_portfolio_from_allocations(state: RunState) -> void:
+	if state == null:
+		return
+	if state.portfolio_cents_by_asset_id == null or typeof(state.portfolio_cents_by_asset_id) != TYPE_DICTIONARY:
+		state.portfolio_cents_by_asset_id = {}
+	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
+		return
+	for asset_id in state.allocated_by_asset.keys():
+		var normalized := str(asset_id)
+		if normalized == "":
+			continue
+		var value := int(state.allocated_by_asset.get(asset_id, 0))
+		if not state.portfolio_cents_by_asset_id.has(normalized) or int(state.portfolio_cents_by_asset_id.get(normalized, 0)) == 0:
+			state.portfolio_cents_by_asset_id[normalized] = value
+
+
+func _get_portfolio_cents(state: RunState, asset_id: String) -> int:
+	if state == null or asset_id == "":
+		return 0
+	if state.portfolio_cents_by_asset_id == null or typeof(state.portfolio_cents_by_asset_id) != TYPE_DICTIONARY:
+		state.portfolio_cents_by_asset_id = {}
+	return int(state.portfolio_cents_by_asset_id.get(asset_id, 0))
+
+
+func _set_portfolio_cents(state: RunState, asset_id: String, cents: int) -> void:
+	if state == null or asset_id == "":
+		return
+	if state.portfolio_cents_by_asset_id == null or typeof(state.portfolio_cents_by_asset_id) != TYPE_DICTIONARY:
+		state.portfolio_cents_by_asset_id = {}
+	state.portfolio_cents_by_asset_id[asset_id] = int(cents)
+
+
+func _get_hand_asset_ids(state: RunState) -> Array[String]:
+	if state == null:
+		return []
+	return _packed_to_array(state.hand_asset_ids)
+
+
+func _build_hand_allocations_from_portfolio(state: RunState, hand_ids: PackedStringArray) -> Dictionary:
+	var result: Dictionary = {}
+	for asset_id in hand_ids:
+		var normalized_id := str(asset_id)
+		if normalized_id == "":
+			continue
+		result[normalized_id] = _get_portfolio_cents(state, normalized_id)
+	return result
+
+
+func _sync_hand_allocations_from_portfolio(state: RunState) -> Dictionary:
+	_ensure_hand_initialized(state)
+	_ensure_portfolio_initialized(state)
+	var hand_allocations := _build_hand_allocations_from_portfolio(state, state.hand_asset_ids)
+	state.allocated_by_asset = hand_allocations
+	return hand_allocations
+
+
+func _is_asset_in_hand(state: RunState, asset_id: String) -> bool:
+	if state == null or asset_id == "":
+		return false
+	return _get_hand_asset_ids(state).has(asset_id)
 
 
 func _packed_to_array(values: PackedStringArray) -> Array[String]:
@@ -682,10 +805,8 @@ func _packed_ints_to_array(values: PackedInt32Array) -> Array[int]:
 func _get_allocated_cents(state: RunState, asset_id: String) -> int:
 	if state == null or asset_id == "":
 		return 0
-	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
-		state.allocated_by_asset = {}
-		return 0
-	return int(state.allocated_by_asset.get(asset_id, 0))
+	_ensure_portfolio_initialized(state)
+	return _get_portfolio_cents(state, asset_id)
 
 
 func _generate_run_id(prefix: String) -> String:
@@ -711,31 +832,30 @@ func _get_asset_duration_years(asset_id: String) -> int:
 
 func _initialize_hand_for_new_run(state: RunState, chosen_asset_ids: Array[String]) -> void:
 	_ensure_hand_initialized(state)
+	_ensure_portfolio_initialized(state)
 	var normalized := PackedStringArray(["", "", "", ""])
 	for i in 4:
 		if i < chosen_asset_ids.size():
 			normalized[i] = str(chosen_asset_ids[i])
 	var locks := PackedInt32Array([0, 0, 0, 0])
-	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
-		state.allocated_by_asset = {}
+	var hand_allocations: Dictionary = {}
 	for i in normalized.size():
 		var asset_id := normalized[i]
 		if asset_id == "":
 			continue
 		var duration := _get_asset_duration_years(asset_id)
 		locks[i] = max(duration, 0)
-		if not state.allocated_by_asset.has(asset_id):
-			state.allocated_by_asset[asset_id] = 0
+		hand_allocations[asset_id] = _get_portfolio_cents(state, asset_id)
 	state.hand_asset_ids = normalized
 	state.hand_lock_years_remaining = locks
 	state.chosen_asset_ids = _packed_to_array(normalized)
+	state.allocated_by_asset = hand_allocations
 	print("Run: init hand slots ids=%s locks=%s" % [normalized, locks])
 
 
 func _apply_hand_selection_for_run(state: RunState, hand_asset_ids: Array[String]) -> void:
 	_ensure_hand_initialized(state)
-	if state.allocated_by_asset == null or typeof(state.allocated_by_asset) != TYPE_DICTIONARY:
-		state.allocated_by_asset = {}
+	_ensure_portfolio_initialized(state)
 	var normalized := PackedStringArray(["", "", "", ""])
 	for i in 4:
 		if i < hand_asset_ids.size():
@@ -743,29 +863,21 @@ func _apply_hand_selection_for_run(state: RunState, hand_asset_ids: Array[String
 	var previous_hand: PackedStringArray = state.hand_asset_ids.duplicate()
 	var previous_locks: PackedInt32Array = state.hand_lock_years_remaining.duplicate()
 	var new_locks := PackedInt32Array([0, 0, 0, 0])
-	var new_allocations: Dictionary = state.allocated_by_asset.duplicate()
-	var refunded_cents := 0
-	for i in previous_hand.size():
-		var prev_id := previous_hand[i]
-		if prev_id == "":
-			continue
-		var still_in_slot := i < normalized.size() and normalized[i] == prev_id
-		if still_in_slot:
-			continue
-		var prev_alloc := _get_allocated_cents(state, prev_id)
-		if prev_alloc > 0:
-			refunded_cents += prev_alloc
-		new_allocations.erase(prev_id)
+	var new_allocations: Dictionary = {}
 	for i in normalized.size():
 		var asset_id := normalized[i]
 		if asset_id == "":
 			continue
-		var existing_lock := previous_locks[i] if i < previous_locks.size() else 0
-		var lock_value: int = existing_lock if existing_lock > 0 and asset_id == previous_hand[i] else max(_get_asset_duration_years(asset_id), 0)
+		var prev_lock := 0
+		for j in previous_hand.size():
+			if previous_hand[j] == asset_id and j < previous_locks.size():
+				prev_lock = int(previous_locks[j])
+				break
+		var lock_value: int = prev_lock if prev_lock > 0 else max(_get_asset_duration_years(asset_id), 0)
 		new_locks[i] = max(lock_value, 0)
-		if not new_allocations.has(asset_id):
-			new_allocations[asset_id] = 0
-	state.unallocated_funds += refunded_cents
+		var value := _get_portfolio_cents(state, asset_id)
+		_set_portfolio_cents(state, asset_id, value)
+		new_allocations[asset_id] = value
 	state.hand_asset_ids = normalized
 	state.hand_lock_years_remaining = new_locks
 	state.chosen_asset_ids = _packed_to_array(normalized)
@@ -773,7 +885,7 @@ func _apply_hand_selection_for_run(state: RunState, hand_asset_ids: Array[String
 	state.total_value = _compute_total_value(state)
 	state.year_start_total_cents = _compute_total_value(state)
 	state.match_started = false
-	print("Run: applied hand selection ids=%s locks=%s refunded=%s" % [normalized, new_locks, _format_currency(refunded_cents)])
+	print("Run: applied hand selection ids=%s locks=%s" % [normalized, new_locks])
 
 
 func _decrement_hand_locks(state: RunState) -> void:
@@ -781,12 +893,26 @@ func _decrement_hand_locks(state: RunState) -> void:
 		return
 	_ensure_hand_initialized(state)
 	var locks: PackedInt32Array = state.hand_lock_years_remaining.duplicate()
+	var ids: PackedStringArray = state.hand_asset_ids.duplicate()
 	for i in locks.size():
 		if locks[i] > 0:
 			locks[i] = max(locks[i] - 1, 0)
+		if locks[i] == 0 and i < ids.size():
+			ids[i] = ""
+	state.hand_asset_ids = ids
 	state.hand_lock_years_remaining = locks
-	state.chosen_asset_ids = _packed_to_array(state.hand_asset_ids)
-	print("Run: advance year -> year_index=%s locks=%s" % [state.current_year_index + 0, locks])
+	state.chosen_asset_ids = _packed_to_array(ids)
+	var locks_array := _packed_ints_to_array(locks)
+	print("Locks decremented -> %s" % [locks_array])
+
+
+func _reset_unallocated_for_new_year(state: RunState) -> void:
+	if state == null:
+		return
+	var reset_value := get_yearly_contribution_cents()
+	state.unallocated_funds = reset_value
+	state.total_funds = reset_value
+	print("Unallocated reset by difficulty -> %s" % _format_currency(reset_value))
 
 
 func _session_mode_to_string(value: int) -> String:
@@ -869,19 +995,42 @@ func advance_year() -> bool:
 	if session_mode != SessionMode.RUN:
 		push_warning("GameManager: advance_year called when session_mode is not RUN.")
 		return false
+	var state := run_state as RunState
+	if state == null:
+		push_warning("GameManager: advance_year called without run_state.")
+		return false
 	var time_horizon := _settings.time_horizon if _settings else 0
 	if current_year_index + 1 >= time_horizon:
 		print("GameManager: end of run reached (year %s)" % current_year_index)
 		_update_profile_stats_for_run_completion()
 		return false
 	_advance_run_year()
+	_reset_unallocated_for_new_year(state)
+	state.current_month = 0
+	state.match_started = false
+	_sync_hand_allocations_from_portfolio(state)
+	state.total_value = _compute_total_value(state)
+	state.year_start_total_cents = state.total_value
 	prepare_next_year()
 	print("GameManager: advanced to year=%s" % current_year_index)
 	return true
 
 
+func advance_year_and_return_to_start_run() -> void:
+	var advanced := _complete_year_if_needed()
+	if not advanced and run_state != null:
+		# Ensure month resets even if the year was already advanced.
+		run_state.current_month = 0
+		run_state.match_started = false
+		run_state.total_value = _compute_total_value(run_state)
+	print("Routing -> StartRun")
+	go_to_start_run()
+
+
 func _advance_run_year() -> void:
-	current_year_index += 1
+	var next_year := current_year_index + 1
+	print("Year ended -> advancing to year=%s" % next_year)
+	current_year_index = next_year
 	if run_state != null:
 		run_state.current_year_index = current_year_index
 		_decrement_hand_locks(run_state)
@@ -893,14 +1042,20 @@ func _complete_year_if_needed() -> bool:
 	var state := run_state as RunState
 	if state == null:
 		return false
+	_ensure_state_currency_in_cents(state)
 	if state.current_month < MONTHS_PER_YEAR:
 		return false
 	_ensure_settings_loaded()
 	var time_horizon := _settings.time_horizon if _settings else 0
 	var is_final_year := current_year_index + 1 >= time_horizon
 	_advance_run_year()
+	_reset_unallocated_for_new_year(state)
+	state.current_month = 0
+	state.match_started = false
+	_sync_hand_allocations_from_portfolio(state)
+	state.total_value = _compute_total_value(state)
+	state.year_start_total_cents = state.total_value
 	if is_final_year:
-		state.current_month = 0
 		_update_profile_stats_for_run_completion()
 	else:
 		prepare_next_year()
@@ -923,6 +1078,7 @@ func prepare_next_year() -> void:
 	run_state.current_month = 0
 	_ensure_state_currency_in_cents(run_state)
 	run_state.year_start_total_cents = _compute_total_value(run_state)
+	run_state.total_value = run_state.year_start_total_cents
 
 	var available_indicator_ids := _get_available_indicator_ids()
 	var settings := _settings
@@ -943,6 +1099,7 @@ func prepare_next_year() -> void:
 	if run_state != null:
 		run_state.current_year_index = scenario.year_index
 		_initialize_indicator_state_for_year(scenario)
+	print("Year start -> year=%s total=%s unallocated=%s" % [run_state.current_year_index if run_state != null else current_year_index, _format_currency(run_state.total_value if run_state != null else 0), _format_currency(run_state.unallocated_funds if run_state != null else 0)])
 	print("Scenario: year=%s indicators=%s levels=%s shocks=%s seed=%s" % [scenario.year_index, scenario.indicator_ids, scenario.indicator_levels, scenario.shocks_triggered, scenario.seed_used])
 
 
@@ -1276,7 +1433,7 @@ func _has_match_started(state: RunState) -> bool:
 		return false
 	_ensure_state_currency_in_cents(state)
 	var started: bool = state.match_started
-	var reduced_unallocated := int(state.unallocated_funds) < int(state.total_funds)
+	var reduced_unallocated := int(state.unallocated_funds) < int(get_yearly_contribution_cents())
 	var allocated_any := false
 	if state.allocated_by_asset != null and typeof(state.allocated_by_asset) == TYPE_DICTIONARY:
 		for value in state.allocated_by_asset.values():
@@ -1292,15 +1449,17 @@ func _has_match_started(state: RunState) -> bool:
 func _compute_total_value(state: RunState, allocations: Variant = null, unallocated_override: Variant = null) -> int:
 	if state == null:
 		return 0
-	var allocation_dict: Dictionary = {}
+	_ensure_portfolio_initialized(state)
+	var portfolio: Dictionary = {}
+	if state.portfolio_cents_by_asset_id != null and typeof(state.portfolio_cents_by_asset_id) == TYPE_DICTIONARY:
+		portfolio = state.portfolio_cents_by_asset_id.duplicate()
 	if allocations != null and typeof(allocations) == TYPE_DICTIONARY:
-		allocation_dict = allocations
-	elif state.allocated_by_asset != null and typeof(state.allocated_by_asset) == TYPE_DICTIONARY:
-		allocation_dict = state.allocated_by_asset
+		for asset_id in allocations.keys():
+			portfolio[asset_id] = allocations[asset_id]
 
 	var unallocated_value := int(round(unallocated_override)) if unallocated_override != null else int(round(state.unallocated_funds))
 	var total := unallocated_value
-	for value in allocation_dict.values():
+	for value in portfolio.values():
 		total += int(round(value))
 	return int(total)
 

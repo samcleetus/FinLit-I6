@@ -123,8 +123,7 @@ func _populate_grid() -> void:
 		_asset_grid.add_child(card_instance)
 		if card_instance.has_method("apply_asset"):
 			card_instance.apply_asset(asset)
-		if card_instance.has_method("set_value_visible"):
-			card_instance.set_value_visible(false)
+		_apply_portfolio_value(card_instance, asset.id)
 		if card_instance.has_method("set_outline_enabled"):
 			card_instance.set_outline_enabled(true)
 		if card_instance.has_method("set_name_font_size"):
@@ -258,8 +257,7 @@ func _refresh_slots() -> void:
 		var asset = asset_by_id.get(asset_id, null)
 		if asset and slot.has_method("apply_asset"):
 			slot.apply_asset(asset)
-		if slot.has_method("set_value_visible"):
-			slot.set_value_visible(false)
+		_apply_portfolio_value(slot, asset_id)
 		if slot.has_method("set_selected"):
 			slot.set_selected(true)
 		var is_locked := i < slot_lock_years_remaining.size() and slot_lock_years_remaining[i] > 0
@@ -355,3 +353,13 @@ func _scale_grid_card(card_instance: Control) -> void:
 	if base_size == Vector2.ZERO:
 		base_size = GRID_CARD_DEFAULT_SIZE
 	card_instance.custom_minimum_size = base_size * GRID_CARD_SCALE
+
+
+func _apply_portfolio_value(card: Node, asset_id: String) -> void:
+	if card == null or asset_id == "":
+		return
+	var cents := GameManager.get_allocated_for_cents(asset_id)
+	if card.has_method("set_value_cents"):
+		card.call("set_value_cents", cents)
+	if card.has_method("set_value_visible"):
+		card.call("set_value_visible", true)

@@ -1,9 +1,11 @@
-[gd_scene load_steps=15 format=3 uid="uid://l4p1oit7vlpt"]
+[gd_scene load_steps=17 format=3 uid="uid://l4p1oit7vlpt"]
 
 [ext_resource type="Script" path="res://Scripts/UI/Profile.gd" id="1_g5ayh"]
 [ext_resource type="Texture2D" uid="uid://bkufwj8ahoe4w" path="res://Assets/Images/UI/background.png" id="2_57fsh"]
+[ext_resource type="FontFile" uid="uid://cir48cl3fhleo" path="res://Assets/Fonts/montserrat.bold.ttf" id="3_3k62m"]
 [ext_resource type="Texture2D" uid="uid://cbb0hko5ah6ge" path="res://Assets/Images/UI/MainMenuButton.png" id="4_p557p"]
 [ext_resource type="Texture2D" uid="uid://6ksqt2cf5qei" path="res://Assets/Images/UI/CollectionButton.png" id="5_3dspi"]
+[ext_resource type="FontFile" uid="uid://ep3h7ef2uyq" path="res://Assets/Fonts/montserrat.medium.ttf" id="5_03jva"]
 [ext_resource type="Texture2D" uid="uid://bgvj1j6scj43j" path="res://Assets/Images/UI/SettingsButton.png" id="5_sjujq"]
 [ext_resource type="Texture2D" uid="uid://bx1uj2n58dmow" path="res://Assets/Images/UI/ProfileButton.png" id="6_2r1qs"]
 
@@ -55,6 +57,7 @@ alignment = 1
 [node name="TitleLabel" type="Label" parent="TitleVBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
+theme_override_fonts/font = ExtResource("3_3k62m")
 theme_override_font_sizes/font_size = 100
 text = "Profile"
 horizontal_alignment = 1
@@ -68,7 +71,7 @@ anchor_right = 0.9
 anchor_bottom = 0.8
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 40
+theme_override_constants/separation = 20
 
 [node name="PlayerImage" type="TextureRect" parent="ContentVBox"]
 custom_minimum_size = Vector2(400, 400)
@@ -76,6 +79,9 @@ layout_mode = 2
 size_flags_horizontal = 4
 texture = ExtResource("6_2r1qs")
 stretch_mode = 4
+
+[node name="Spacer" type="Control" parent="ContentVBox"]
+layout_mode = 2
 
 [node name="StatRow1" type="HFlowContainer" parent="ContentVBox"]
 layout_mode = 2
@@ -85,6 +91,7 @@ alignment = 1
 [node name="NameLabel" type="Label" parent="ContentVBox/StatRow1"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
+theme_override_fonts/font = ExtResource("3_3k62m")
 theme_override_font_sizes/font_size = 60
 text = "Total Runs:"
 
@@ -92,6 +99,7 @@ text = "Total Runs:"
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
+theme_override_fonts/font = ExtResource("5_03jva")
 theme_override_font_sizes/font_size = 60
 text = "—"
 
@@ -103,6 +111,7 @@ alignment = 1
 [node name="NameLabel" type="Label" parent="ContentVBox/StatRow2"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
+theme_override_fonts/font = ExtResource("3_3k62m")
 theme_override_font_sizes/font_size = 60
 text = "Best Run:"
 
@@ -110,6 +119,7 @@ text = "Best Run:"
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
+theme_override_fonts/font = ExtResource("5_03jva")
 theme_override_font_sizes/font_size = 60
 text = "—"
 
@@ -121,6 +131,7 @@ alignment = 1
 [node name="NameLabel" type="Label" parent="ContentVBox/StatRow3"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
+theme_override_fonts/font = ExtResource("3_3k62m")
 theme_override_font_sizes/font_size = 60
 text = "Total Allocations:"
 
@@ -128,6 +139,7 @@ text = "Total Allocations:"
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
+theme_override_fonts/font = ExtResource("5_03jva")
 theme_override_font_sizes/font_size = 60
 text = "—"
 
@@ -139,6 +151,7 @@ alignment = 1
 [node name="NameLabel" type="Label" parent="ContentVBox/StatRow4"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
+theme_override_fonts/font = ExtResource("3_3k62m")
 theme_override_font_sizes/font_size = 60
 text = "Favorite Asset:"
 
@@ -146,6 +159,7 @@ text = "Favorite Asset:"
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
+theme_override_fonts/font = ExtResource("5_03jva")
 theme_override_font_sizes/font_size = 60
 text = "—"
 
@@ -157,6 +171,7 @@ alignment = 1
 [node name="NameLabel" type="Label" parent="ContentVBox/StatRow5"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
+theme_override_fonts/font = ExtResource("3_3k62m")
 theme_override_font_sizes/font_size = 60
 text = "Biggest 1 Year Gain:"
 
@@ -164,6 +179,7 @@ text = "Biggest 1 Year Gain:"
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
+theme_override_fonts/font = ExtResource("5_03jva")
 theme_override_font_sizes/font_size = 60
 text = "—"
 
@@ -175,6 +191,7 @@ alignment = 1
 [node name="NameLabel" type="Label" parent="ContentVBox/StatRow6"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
+theme_override_fonts/font = ExtResource("3_3k62m")
 theme_override_font_sizes/font_size = 60
 text = "Biggest 1 Year Loss:"
 
@@ -182,6 +199,7 @@ text = "Biggest 1 Year Loss:"
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
+theme_override_fonts/font = ExtResource("5_03jva")
 theme_override_font_sizes/font_size = 60
 text = "—"
 

@@ -11,6 +11,7 @@ class_name RunState
 @export var total_value: int = 10000
 @export var unallocated_funds: int = 10000
 @export var allocated_by_asset: Dictionary = {}
+@export var portfolio_cents_by_asset_id: Dictionary = {}
 @export var current_month: int = 0
 @export var match_started: bool = false
 @export var current_indicator_levels: Dictionary = {}

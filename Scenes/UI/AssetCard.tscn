@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3 uid="uid://bhmdobeuhceae"]
+[gd_scene load_steps=6 format=3 uid="uid://bhmdobeuhceae"]
 
 [ext_resource type="Texture2D" uid="uid://d1jyq6h51ma0r" path="res://Assets/Images/Animals/Giraffe.png" id="1_om4de"]
 [ext_resource type="Script" path="res://Scripts/UI/AssetCard.gd" id="1_y8jg7"]
 [ext_resource type="Texture2D" uid="uid://dudnowk2glm6g" path="res://Assets/Images/UI/AssetLocked.png" id="2_yq6aa"]
+[ext_resource type="FontFile" uid="uid://cir48cl3fhleo" path="res://Assets/Fonts/montserrat.bold.ttf" id="4_384it"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_upab2"]
 
@@ -50,6 +51,7 @@ stretch_mode = 4
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
+theme_override_fonts/font = ExtResource("4_384it")
 theme_override_font_sizes/font_size = 30
 text = "Asset Name"
 horizontal_alignment = 1
@@ -58,6 +60,7 @@ horizontal_alignment = 1
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
+theme_override_fonts/font = ExtResource("4_384it")
 theme_override_font_sizes/font_size = 30
 text = "$0"
 horizontal_alignment = 1

@@ -680,5 +680,4 @@ func _on_overlay_main_menu_pressed() -> void:
 
 func _on_overlay_next_year_pressed() -> void:
 	print("EndMatchOverlay: next year pressed")
-	GameManager.complete_year_if_needed()
-	GameManager.go_to_start_run()
+	GameManager.advance_year_and_return_to_start_run()

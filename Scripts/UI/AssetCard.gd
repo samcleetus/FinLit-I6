@@ -86,6 +86,12 @@ func set_value_visible(visible_enabled: bool) -> void:
 		_value_label.visible = visible_enabled
 
 
+func set_value_cents(amount_cents: int) -> void:
+	_ensure_nodes()
+	if _value_label:
+		_value_label.text = GameManager.format_currency(amount_cents)
+
+
 func set_icon_scale(scale_factor: float) -> void:
 	_ensure_nodes()
 	if _image:

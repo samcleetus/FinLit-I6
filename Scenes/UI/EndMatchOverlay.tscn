@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3 uid="uid://bpgcr756l6cp8"]
+[gd_scene load_steps=5 format=3 uid="uid://bpgcr756l6cp8"]
 
 [ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_r4ip7"]
+[ext_resource type="FontFile" uid="uid://cir48cl3fhleo" path="res://Assets/Fonts/montserrat.bold.ttf" id="1_xhaxc"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_llbyk"]
 bg_color = Color(0.203922, 0.258824, 0.345098, 1)
@@ -37,6 +38,7 @@ alignment = 1
 
 [node name="TitleLabel" type="Label" parent="TitleVBox"]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("1_xhaxc")
 theme_override_font_sizes/font_size = 100
 text = "Match Complete!"
 horizontal_alignment = 1
@@ -70,6 +72,7 @@ alignment = 1
 [node name="NameLabel" type="Label" parent="Card/StatsVBox/StatRow1"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("1_xhaxc")
 theme_override_font_sizes/font_size = 60
 text = "Stat 1:"
 
@@ -81,6 +84,7 @@ alignment = 1
 [node name="NameLabel" type="Label" parent="Card/StatsVBox/StatRow2"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("1_xhaxc")
 theme_override_font_sizes/font_size = 60
 text = "Stat 2:"
 
@@ -92,6 +96,7 @@ alignment = 1
 [node name="NameLabel" type="Label" parent="Card/StatsVBox/StatRow3"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("1_xhaxc")
 theme_override_font_sizes/font_size = 60
 text = "Stat 3:"
 

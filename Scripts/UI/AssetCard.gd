@@ -18,6 +18,7 @@ var _outline_thickness: float = 2.0
 var _outline_margin: float = 4.0
 var _name_font_size_default: int = 25
 var _locked_overlay: TextureRect
+var _outline_refresh_pending: bool = false
 
 
 func _ready() -> void:
@@ -26,6 +27,12 @@ func _ready() -> void:
 		_hit_button.disabled = false
 		_hit_button.mouse_filter = Control.MOUSE_FILTER_STOP
 		_hit_button.pressed.connect(_on_pressed)
+	_schedule_outline_refresh()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED:
+		_schedule_outline_refresh()
 
 
 func apply_asset(asset: Asset) -> void:
@@ -63,7 +70,7 @@ func set_selected(is_selected: bool) -> void:
 	selected = is_selected
 	self.modulate = Color(1, 1, 1, 1) if is_selected else Color(1, 1, 1, 0.9)
 	if _outline_enabled:
-		queue_redraw()
+		_schedule_outline_refresh()
 
 
 func set_interactable(is_enabled: bool) -> void:
@@ -100,7 +107,7 @@ func _on_pressed() -> void:
 
 func set_outline_enabled(enabled: bool) -> void:
 	_outline_enabled = enabled
-	queue_redraw()
+	_schedule_outline_refresh()
 
 
 func set_name_font_size(font_size: int) -> void:
@@ -132,6 +139,18 @@ func _ensure_nodes() -> void:
 	if _image and not _base_image_scale_set:
 		_base_image_scale = _image.scale
 		_base_image_scale_set = true
+
+
+func _refresh_outline() -> void:
+	_outline_refresh_pending = false
+	queue_redraw()
+
+
+func _schedule_outline_refresh() -> void:
+	if _outline_refresh_pending:
+		return
+	_outline_refresh_pending = true
+	call_deferred("_refresh_outline")
 
 
 func _get_outline_rect() -> Rect2:

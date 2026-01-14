@@ -13,8 +13,8 @@ var _vbox: Control
 var _base_image_scale: Vector2 = Vector2.ONE
 var _base_image_scale_set: bool = false
 var _outline_enabled: bool = false
-var _outline_color: Color = Color.WHITE
-var _outline_thickness: float = 2.0
+var _outline_color: Color = Color("#344258")
+var _outline_thickness: float = 4.0
 var _outline_margin: float = 4.0
 var _name_font_size_default: int = 25
 var _locked_overlay: TextureRect

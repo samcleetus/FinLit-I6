@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://c1h13euumpuks"]
+[gd_scene load_steps=20 format=3 uid="uid://c1h13euumpuks"]
 
 [ext_resource type="Script" path="res://Scripts/UI/Collection.gd" id="1_1mr7b"]
 [ext_resource type="Texture2D" uid="uid://bchdv8l5tdfqb" path="res://Assets/Images/UI/Background2.png" id="2_6ebc0"]
@@ -8,6 +8,9 @@
 [ext_resource type="Texture2D" uid="uid://cla2qkq7xy6yt" path="res://Assets/Images/UI/MainMenuButton.png" id="4_yewvn"]
 [ext_resource type="Texture2D" uid="uid://eu6bc878m0ye" path="res://Assets/Images/UI/ProfileButton.png" id="5_hp3yq"]
 [ext_resource type="Texture2D" uid="uid://d4jm4seoy3gyo" path="res://Assets/Images/UI/SettingsButton.png" id="5_owgyl"]
+[ext_resource type="Texture2D" uid="uid://cutdy5aj8npfa" path="res://Assets/Images/UI/AssetCollectionCard.png" id="9_akkla"]
+[ext_resource type="FontFile" uid="uid://ep3h7ef2uyq" path="res://Assets/Fonts/montserrat.medium.ttf" id="10_52m65"]
+[ext_resource type="Texture2D" uid="uid://cn1x6t8v16m26" path="res://Assets/Images/UI/CloseButton.png" id="10_h116t"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ynfma"]
 
@@ -22,6 +25,8 @@
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_15oxt"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ohf76"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_m2dma"]
 
 [node name="Collection" type="Control"]
 layout_mode = 3
@@ -75,6 +80,8 @@ size_flags_vertical = 3
 
 [node name="AssetGrid" type="GridContainer" parent="AssetScroll/AssetGridCenter"]
 layout_mode = 2
+theme_override_constants/h_separation = 80
+theme_override_constants/v_separation = 80
 columns = 3
 
 [node name="ButtonsRowBackground" type="TextureRect" parent="."]
@@ -140,3 +147,131 @@ icon = ExtResource("5_owgyl")
 flat = true
 icon_alignment = 1
 expand_icon = true
+
+[node name="PressedAssetPanel" type="TextureRect" parent="."]
+custom_minimum_size = Vector2(800, 1000)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("9_akkla")
+
+[node name="StatsVBox" type="VBoxContainer" parent="PressedAssetPanel"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.05
+anchor_top = 0.04
+anchor_right = 0.95
+anchor_bottom = 0.96
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="CloseButton" type="Button" parent="PressedAssetPanel/StatsVBox"]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_styles/focus = SubResource("StyleBoxEmpty_m2dma")
+icon = ExtResource("10_h116t")
+flat = true
+
+[node name="ContentRow1" type="HBoxContainer" parent="PressedAssetPanel/StatsVBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="AssetNameLabel" type="Label" parent="PressedAssetPanel/StatsVBox/ContentRow1"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_1upis")
+theme_override_font_sizes/font_size = 70
+text = "Asset Name"
+
+[node name="Spacer" type="Control" parent="PressedAssetPanel/StatsVBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+
+[node name="ContentRow2" type="HBoxContainer" parent="PressedAssetPanel/StatsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="BestAgainstLabel" type="Label" parent="PressedAssetPanel/StatsVBox/ContentRow2"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_1upis")
+theme_override_font_sizes/font_size = 33
+text = "Best Against:"
+
+[node name="ValueLabel" type="Label" parent="PressedAssetPanel/StatsVBox/ContentRow2"]
+custom_minimum_size = Vector2(410, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("10_52m65")
+theme_override_font_sizes/font_size = 33
+text = "None"
+autowrap_mode = 2
+
+[node name="ContentRow3" type="HBoxContainer" parent="PressedAssetPanel/StatsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="WorstAgainstLabel" type="Label" parent="PressedAssetPanel/StatsVBox/ContentRow3"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_1upis")
+theme_override_font_sizes/font_size = 33
+text = "Worst Against:"
+
+[node name="ValueLabel" type="Label" parent="PressedAssetPanel/StatsVBox/ContentRow3"]
+custom_minimum_size = Vector2(410, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("10_52m65")
+theme_override_font_sizes/font_size = 33
+text = "None"
+autowrap_mode = 2
+
+[node name="ContentRow4" type="HBoxContainer" parent="PressedAssetPanel/StatsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="DurationLabel" type="Label" parent="PressedAssetPanel/StatsVBox/ContentRow4"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_1upis")
+theme_override_font_sizes/font_size = 33
+text = "Duration:"
+
+[node name="ValueLabel" type="Label" parent="PressedAssetPanel/StatsVBox/ContentRow4"]
+custom_minimum_size = Vector2(410, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("10_52m65")
+theme_override_font_sizes/font_size = 33
+text = "None"
+autowrap_mode = 2
+
+[node name="ContentRow5" type="HBoxContainer" parent="PressedAssetPanel/StatsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="DescriptionLabel" type="Label" parent="PressedAssetPanel/StatsVBox/ContentRow5"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_1upis")
+theme_override_font_sizes/font_size = 33
+text = "Description:"
+
+[node name="ValueLabel" type="Label" parent="PressedAssetPanel/StatsVBox/ContentRow5"]
+custom_minimum_size = Vector2(410, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("10_52m65")
+theme_override_font_sizes/font_size = 33
+text = "None"
+autowrap_mode = 2

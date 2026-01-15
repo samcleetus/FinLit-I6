@@ -2,7 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://bhmdobeuhceae" path="res://Scenes/UI/AssetCard.tscn" id="1_jmgjt"]
 [ext_resource type="Script" path="res://Scripts/UI/Match.gd" id="1_l0fja"]
-[ext_resource type="Texture2D" uid="uid://bkufwj8ahoe4w" path="res://Assets/Images/UI/background.png" id="2_0p2t6"]
+[ext_resource type="Texture2D" uid="uid://bchdv8l5tdfqb" path="res://Assets/Images/UI/Background2.png" id="2_o3nk2"]
 [ext_resource type="PackedScene" uid="uid://bpgcr756l6cp8" path="res://Scenes/UI/EndMatchOverlay.tscn" id="3_n0vqm"]
 [ext_resource type="FontFile" uid="uid://ep3h7ef2uyq" path="res://Assets/Fonts/montserrat.medium.ttf" id="3_wjhmq"]
 [ext_resource type="FontFile" uid="uid://cir48cl3fhleo" path="res://Assets/Fonts/montserrat.bold.ttf" id="4_o73tr"]
@@ -28,7 +28,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-texture = ExtResource("2_0p2t6")
+texture = ExtResource("2_o3nk2")
 
 [node name="LabelVBox" type="VBoxContainer" parent="."]
 layout_mode = 1

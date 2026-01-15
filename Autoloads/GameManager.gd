@@ -100,6 +100,8 @@ func start_new_run(chosen_asset_ids: Array[String]) -> bool:
 	state.reset_history()
 	state.currency_in_cents = true
 	state.portfolio_cents_by_asset_id = {}
+	state.year_start_asset_cents = {}
+	state.last_year_summary = {}
 	_ensure_portfolio_initialized(state)
 	_reset_unallocated_for_new_year(state)
 	state.total_value = _compute_total_value(state)
@@ -216,6 +218,29 @@ func get_total_value_cents() -> int:
 
 func get_total_value() -> int:
 	return _cents_to_whole_dollars(get_total_value_cents())
+
+
+func get_end_year_match_summary() -> Dictionary:
+	var default_summary := {
+		"net_cents": 0,
+		"best_asset_id": "",
+		"best_asset_delta_cents": 0,
+		"worst_asset_id": "",
+		"worst_asset_delta_cents": 0,
+	}
+	if session_mode != SessionMode.RUN:
+		return default_summary
+	var state := run_state as RunState
+	if state == null:
+		return default_summary
+	_ensure_state_currency_in_cents(state)
+	if state.last_year_summary != null and typeof(state.last_year_summary) == TYPE_DICTIONARY and state.last_year_summary.size() > 0:
+		var merged := default_summary.duplicate()
+		for key in state.last_year_summary.keys():
+			merged[key] = state.last_year_summary.get(key)
+		return merged
+	print("GameManager: end-year summary requested but missing; returning defaults.")
+	return default_summary
 
 
 func format_currency(amount_cents: int) -> String:
@@ -658,6 +683,10 @@ func _ensure_state_currency_in_cents(state: RunState) -> void:
 	if state == null:
 		return
 	_ensure_portfolio_initialized(state)
+	if state.year_start_asset_cents == null or typeof(state.year_start_asset_cents) != TYPE_DICTIONARY:
+		state.year_start_asset_cents = {}
+	if state.last_year_summary == null or typeof(state.last_year_summary) != TYPE_DICTIONARY:
+		state.last_year_summary = {}
 	if state.currency_in_cents:
 		_backfill_portfolio_from_allocations(state)
 		return
@@ -682,6 +711,11 @@ func _ensure_state_currency_in_cents(state: RunState) -> void:
 	state.total_value = _dollars_to_cents(raw_total_value)
 	if "year_start_total_cents" in state:
 		state.year_start_total_cents = _dollars_to_cents(state.year_start_total_cents)
+	if state.year_start_asset_cents != null and typeof(state.year_start_asset_cents) == TYPE_DICTIONARY:
+		var converted_start_assets: Dictionary = {}
+		for asset_id in state.year_start_asset_cents.keys():
+			converted_start_assets[asset_id] = _dollars_to_cents(state.year_start_asset_cents.get(asset_id, 0))
+		state.year_start_asset_cents = converted_start_assets
 	state.currency_in_cents = true
 	_backfill_portfolio_from_allocations(state)
 
@@ -883,7 +917,7 @@ func _apply_hand_selection_for_run(state: RunState, hand_asset_ids: Array[String
 	state.chosen_asset_ids = _packed_to_array(normalized)
 	state.allocated_by_asset = new_allocations
 	state.total_value = _compute_total_value(state)
-	state.year_start_total_cents = _compute_total_value(state)
+	_capture_year_start_snapshot(state)
 	state.match_started = false
 	print("Run: applied hand selection ids=%s locks=%s" % [normalized, new_locks])
 
@@ -913,6 +947,27 @@ func _reset_unallocated_for_new_year(state: RunState) -> void:
 	state.unallocated_funds = reset_value
 	state.total_funds = reset_value
 	print("Unallocated reset by difficulty -> %s" % _format_currency(reset_value))
+
+
+func _capture_year_start_snapshot(state: RunState) -> void:
+	if state == null:
+		return
+	_ensure_state_currency_in_cents(state)
+	var snapshot: Dictionary = {}
+	if state.portfolio_cents_by_asset_id != null and typeof(state.portfolio_cents_by_asset_id) == TYPE_DICTIONARY:
+		for asset_id in state.portfolio_cents_by_asset_id.keys():
+			var normalized_id := str(asset_id)
+			if normalized_id == "":
+				continue
+			snapshot[normalized_id] = int(round(state.portfolio_cents_by_asset_id.get(asset_id, 0)))
+	state.year_start_asset_cents = snapshot
+	state.year_start_total_cents = _compute_total_value(state)
+	state.total_value = state.year_start_total_cents
+	print("GameManager: year start snapshot -> year=%s total=%s assets=%s" % [
+		state.current_year_index,
+		_format_currency(state.year_start_total_cents),
+		snapshot
+	])
 
 
 func _session_mode_to_string(value: int) -> String:
@@ -1077,8 +1132,7 @@ func prepare_next_year() -> void:
 
 	run_state.current_month = 0
 	_ensure_state_currency_in_cents(run_state)
-	run_state.year_start_total_cents = _compute_total_value(run_state)
-	run_state.total_value = run_state.year_start_total_cents
+	_capture_year_start_snapshot(run_state)
 
 	var available_indicator_ids := _get_available_indicator_ids()
 	var settings := _settings
@@ -1201,20 +1255,37 @@ func _build_asset_slot_view_models() -> Array[AssetSlotViewModel]:
 	return slots
 
 
+func _prettify_asset_id(asset_id: String) -> String:
+	if asset_id == "":
+		return ""
+	var spaced := asset_id.replace("_", " ").replace("-", " ")
+	var parts := spaced.split(" ", false)
+	for i in parts.size():
+		var part := parts[i]
+		if part == "":
+			continue
+		parts[i] = part.substr(0, 1).to_upper() + part.substr(1).to_lower()
+	return " ".join(parts).strip_edges()
+
+
 func _resolve_asset_display_name(asset_id: String) -> String:
 	if asset_id == "":
 		return ""
 	var asset_db := load(AssetDBPath)
 	if asset_db == null or not asset_db.has_method("get_by_id"):
-		return asset_id
+		return _prettify_asset_id(asset_id)
 	var asset: Object = asset_db.get_by_id(asset_id)
 	if asset == null:
-		return asset_id
+		return _prettify_asset_id(asset_id)
 	if "display_name" in asset and asset.display_name != null:
 		var display_name := str(asset.display_name)
 		if display_name.strip_edges() != "":
 			return display_name
-	return asset_id
+	return _prettify_asset_id(asset_id)
+
+
+func get_asset_display_name(asset_id: String) -> String:
+	return _resolve_asset_display_name(asset_id)
 
 
 func _initialize_indicator_state_for_year(scenario: YearScenario) -> void:
@@ -1514,6 +1585,53 @@ func _record_indicator_exposure(indicator_ids: Array) -> void:
 	_persist_profile_stats()
 
 
+func _build_end_year_summary(state: RunState, start_total: int, end_total: int) -> Dictionary:
+	var start_assets: Dictionary = {}
+	if state.year_start_asset_cents != null and typeof(state.year_start_asset_cents) == TYPE_DICTIONARY:
+		start_assets = state.year_start_asset_cents.duplicate()
+	var end_assets: Dictionary = {}
+	if state.portfolio_cents_by_asset_id != null and typeof(state.portfolio_cents_by_asset_id) == TYPE_DICTIONARY:
+		for asset_id in state.portfolio_cents_by_asset_id.keys():
+			var normalized := str(asset_id)
+			if normalized == "":
+				continue
+			end_assets[normalized] = int(round(state.portfolio_cents_by_asset_id.get(asset_id, 0)))
+
+	var asset_ids: Array[String] = []
+	for key in start_assets.keys():
+		var normalized := str(key)
+		if normalized != "" and not asset_ids.has(normalized):
+			asset_ids.append(normalized)
+	for key in end_assets.keys():
+		var normalized := str(key)
+		if normalized != "" and not asset_ids.has(normalized):
+			asset_ids.append(normalized)
+
+	var best_id := ""
+	var best_delta := 0
+	var worst_id := ""
+	var worst_delta := 0
+	for asset_id in asset_ids:
+		var start_value := int(start_assets.get(asset_id, 0))
+		var end_value := int(end_assets.get(asset_id, 0))
+		var delta := end_value - start_value
+		if best_id == "" or delta > best_delta:
+			best_id = asset_id
+			best_delta = delta
+		if worst_id == "" or delta < worst_delta:
+			worst_id = asset_id
+			worst_delta = delta
+
+	return {
+		"year_index": state.current_year_index,
+		"net_cents": end_total - start_total,
+		"best_asset_id": best_id,
+		"best_asset_delta_cents": best_delta,
+		"worst_asset_id": worst_id,
+		"worst_asset_delta_cents": worst_delta,
+	}
+
+
 func _maybe_record_year_result(state: RunState) -> void:
 	if session_mode != SessionMode.RUN:
 		return
@@ -1526,6 +1644,16 @@ func _maybe_record_year_result(state: RunState) -> void:
 	var start_total := int(state.year_start_total_cents) if "year_start_total_cents" in state else _compute_total_value(state)
 	var end_total := _compute_total_value(state)
 	var delta := end_total - start_total
+	state.last_year_summary = _build_end_year_summary(state, start_total, end_total)
+	var summary: Dictionary = state.last_year_summary if state.last_year_summary != null else {}
+	delta = int(summary.get("net_cents", delta))
+	print("GameManager: end-year summary -> net=%s best=%s (%s) worst=%s (%s)" % [
+		_format_currency(int(summary.get("net_cents", delta))),
+		str(summary.get("best_asset_id", "")),
+		_format_currency(int(summary.get("best_asset_delta_cents", 0))),
+		str(summary.get("worst_asset_id", "")),
+		_format_currency(int(summary.get("worst_asset_delta_cents", 0))),
+	])
 	var updated := false
 	if delta > _profile_stats.biggest_year_gain_cents:
 		_profile_stats.biggest_year_gain_cents = delta

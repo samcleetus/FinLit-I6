@@ -1,14 +1,15 @@
 [gd_scene load_steps=21 format=3 uid="uid://b1kp1dg4htqos"]
 
 [ext_resource type="Script" path="res://Scripts/UI/Settings.gd" id="1_c7155"]
-[ext_resource type="Texture2D" uid="uid://bkufwj8ahoe4w" path="res://Assets/Images/UI/background.png" id="2_vcu7i"]
+[ext_resource type="Texture2D" uid="uid://bchdv8l5tdfqb" path="res://Assets/Images/UI/Background2.png" id="2_itt5c"]
 [ext_resource type="FontFile" uid="uid://cir48cl3fhleo" path="res://Assets/Fonts/montserrat.bold.ttf" id="3_talw1"]
-[ext_resource type="Texture2D" uid="uid://6ksqt2cf5qei" path="res://Assets/Images/UI/CollectionButton.png" id="4_atc8x"]
+[ext_resource type="Texture2D" uid="uid://bbnnht2ad2veb" path="res://Assets/Images/UI/CollectionButton.png" id="4_atc8x"]
 [ext_resource type="FontFile" uid="uid://ep3h7ef2uyq" path="res://Assets/Fonts/montserrat.medium.ttf" id="4_kh4js"]
-[ext_resource type="Texture2D" uid="uid://cbb0hko5ah6ge" path="res://Assets/Images/UI/MainMenuButton.png" id="4_rn465"]
+[ext_resource type="Texture2D" uid="uid://cla2qkq7xy6yt" path="res://Assets/Images/UI/MainMenuButton.png" id="4_rn465"]
 [ext_resource type="Texture2D" uid="uid://d4mygy4hg3w76" path="res://Assets/Images/UI/StartButton.png" id="5_1cv0u"]
-[ext_resource type="Texture2D" uid="uid://bx1uj2n58dmow" path="res://Assets/Images/UI/ProfileButton.png" id="5_8be8v"]
-[ext_resource type="Texture2D" uid="uid://bgvj1j6scj43j" path="res://Assets/Images/UI/SettingsButton.png" id="5_8dsvu"]
+[ext_resource type="Texture2D" uid="uid://eu6bc878m0ye" path="res://Assets/Images/UI/ProfileButton.png" id="5_8be8v"]
+[ext_resource type="Texture2D" uid="uid://d4jm4seoy3gyo" path="res://Assets/Images/UI/SettingsButton.png" id="5_8dsvu"]
+[ext_resource type="Texture2D" uid="uid://ctkrl4n86t4g6" path="res://Assets/Images/UI/NavBackground.png" id="6_m5kqd"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_bwr45"]
 
@@ -16,21 +17,19 @@
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pjkql"]
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_54e3f"]
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_4sbl5"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jy5vo"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_apk0v"]
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_7r4k3"]
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_qpvi7"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ub7gj"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ax72s"]
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_43d86"]
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ynhmq"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6vbp3"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kapwj"]
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_x2p0a"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3rjqe"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lkbye"]
 
 [node name="Settings" type="Control"]
 layout_mode = 3
@@ -48,7 +47,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-texture = ExtResource("2_vcu7i")
+texture = ExtResource("2_itt5c")
 
 [node name="TitleVBox" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -180,24 +179,34 @@ theme_override_font_sizes/font_size = 60
 text = "SAVE CHANGES"
 horizontal_alignment = 1
 
+[node name="ButtonsRowBackground" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.08
+anchor_top = 0.86
+anchor_right = 0.92
+anchor_bottom = 0.95
+grow_horizontal = 2
+grow_vertical = 0
+texture = ExtResource("6_m5kqd")
+
 [node name="ButtonsRow" type="HBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = -1
-anchor_left = 0.05
-anchor_top = 0.85
-anchor_right = 0.95
-anchor_bottom = 0.97
+anchor_left = 0.08
+anchor_top = 0.87
+anchor_right = 0.92
+anchor_bottom = 0.94
 offset_top = -8.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_constants/separation = 40
 alignment = 1
 
 [node name="MainMenuButton" type="Button" parent="ButtonsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/focus = SubResource("StyleBoxEmpty_54e3f")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_jy5vo")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_4sbl5")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_apk0v")
 icon = ExtResource("4_rn465")
 flat = true
 icon_alignment = 1
@@ -206,8 +215,8 @@ expand_icon = true
 [node name="CollectionButton" type="Button" parent="ButtonsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/focus = SubResource("StyleBoxEmpty_7r4k3")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_ub7gj")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_qpvi7")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ax72s")
 icon = ExtResource("4_atc8x")
 flat = true
 icon_alignment = 1
@@ -216,8 +225,8 @@ expand_icon = true
 [node name="ProfileButton" type="Button" parent="ButtonsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/focus = SubResource("StyleBoxEmpty_43d86")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_6vbp3")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_ynhmq")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_kapwj")
 icon = ExtResource("5_8be8v")
 flat = true
 icon_alignment = 1
@@ -226,8 +235,8 @@ expand_icon = true
 [node name="SettingsButton" type="Button" parent="ButtonsRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/focus = SubResource("StyleBoxEmpty_x2p0a")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_3rjqe")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_ynhmq")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_lkbye")
 disabled = true
 icon = ExtResource("5_8dsvu")
 flat = true

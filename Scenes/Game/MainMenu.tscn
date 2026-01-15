@@ -1,19 +1,18 @@
 [gd_scene load_steps=20 format=3 uid="uid://ds3i0buprpqvs"]
 
 [ext_resource type="Script" path="res://Scripts/UI/MainMenu.gd" id="1_mwn2r"]
-[ext_resource type="Texture2D" uid="uid://bkufwj8ahoe4w" path="res://Assets/Images/UI/background.png" id="2_nmk72"]
-[ext_resource type="Texture2D" uid="uid://dpwq7nbjwav83" path="res://Assets/Images/UI/Container.png" id="3_2o74f"]
-[ext_resource type="Texture2D" uid="uid://emsqg7b3g5ku" path="res://Assets/Images/UI/PlayButton.png" id="3_sm76x"]
+[ext_resource type="Texture2D" uid="uid://bchdv8l5tdfqb" path="res://Assets/Images/UI/Background2.png" id="2_gpkke"]
+[ext_resource type="Texture2D" uid="uid://dpxaobbew8rxr" path="res://Assets/Images/UI/Container.png" id="3_2o74f"]
 [ext_resource type="FontFile" uid="uid://cir48cl3fhleo" path="res://Assets/Fonts/montserrat.bold.ttf" id="3_yevsn"]
 [ext_resource type="FontFile" uid="uid://ep3h7ef2uyq" path="res://Assets/Fonts/montserrat.medium.ttf" id="4_hrbyk"]
-[ext_resource type="Texture2D" uid="uid://6ksqt2cf5qei" path="res://Assets/Images/UI/CollectionButton.png" id="4_jgia4"]
-[ext_resource type="Texture2D" uid="uid://cbb0hko5ah6ge" path="res://Assets/Images/UI/MainMenuButton.png" id="4_sbmxj"]
-[ext_resource type="Texture2D" uid="uid://bx1uj2n58dmow" path="res://Assets/Images/UI/ProfileButton.png" id="5_mm6iv"]
-[ext_resource type="Texture2D" uid="uid://bgvj1j6scj43j" path="res://Assets/Images/UI/SettingsButton.png" id="5_ty0lx"]
+[ext_resource type="Texture2D" uid="uid://bbnnht2ad2veb" path="res://Assets/Images/UI/CollectionButton.png" id="4_jgia4"]
+[ext_resource type="Texture2D" uid="uid://cla2qkq7xy6yt" path="res://Assets/Images/UI/MainMenuButton.png" id="4_sbmxj"]
+[ext_resource type="Texture2D" uid="uid://eu6bc878m0ye" path="res://Assets/Images/UI/ProfileButton.png" id="5_mm6iv"]
+[ext_resource type="Texture2D" uid="uid://d4jm4seoy3gyo" path="res://Assets/Images/UI/SettingsButton.png" id="5_ty0lx"]
+[ext_resource type="Texture2D" uid="uid://dxd4j4b86r0on" path="res://Assets/Images/UI/PlayButton2.png" id="6_jd8ix"]
+[ext_resource type="Texture2D" uid="uid://ctkrl4n86t4g6" path="res://Assets/Images/UI/NavBackground.png" id="7_jpo4n"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_7glq7"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4tj7b"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ni302"]
 
@@ -45,7 +44,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-texture = ExtResource("2_nmk72")
+texture = ExtResource("2_gpkke")
 
 [node name="TitleVBox" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -62,7 +61,7 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
 theme_override_fonts/font = ExtResource("3_yevsn")
-theme_override_font_sizes/font_size = 100
+theme_override_font_sizes/font_size = 110
 text = "Main Menu"
 horizontal_alignment = 1
 
@@ -70,7 +69,7 @@ horizontal_alignment = 1
 layout_mode = 2
 theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
 theme_override_fonts/font = ExtResource("4_hrbyk")
-theme_override_font_sizes/font_size = 60
+theme_override_font_sizes/font_size = 40
 horizontal_alignment = 1
 
 [node name="CenterContainer" type="VBoxContainer" parent="."]
@@ -86,7 +85,7 @@ offset_right = 20.0
 offset_bottom = 351.2
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 80
+theme_override_constants/separation = 50
 alignment = 1
 
 [node name="Container" type="TextureRect" parent="CenterContainer"]
@@ -100,16 +99,15 @@ custom_minimum_size = Vector2(0, 150)
 layout_mode = 2
 theme_override_font_sizes/font_size = 60
 theme_override_styles/focus = SubResource("StyleBoxEmpty_7glq7")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_4tj7b")
-icon = ExtResource("3_sm76x")
+icon = ExtResource("6_jd8ix")
 flat = true
 icon_alignment = 1
 
 [node name="ButtonLabel" type="Label" parent="CenterContainer/PlayButton"]
 layout_mode = 1
-anchors_preset = 8
+anchors_preset = -1
 anchor_left = 0.5
-anchor_top = 0.5
+anchor_top = 0.292
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -20.0
@@ -124,17 +122,27 @@ theme_override_font_sizes/font_size = 60
 text = "PLAY"
 horizontal_alignment = 1
 
+[node name="ButtonsRowBackground" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.08
+anchor_top = 0.86
+anchor_right = 0.92
+anchor_bottom = 0.95
+grow_horizontal = 2
+grow_vertical = 0
+texture = ExtResource("7_jpo4n")
+
 [node name="ButtonsRow" type="HBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = -1
-anchor_left = 0.05
-anchor_top = 0.85
-anchor_right = 0.95
-anchor_bottom = 0.97
+anchor_left = 0.08
+anchor_top = 0.87
+anchor_right = 0.92
+anchor_bottom = 0.94
 offset_top = -8.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_constants/separation = 40
 alignment = 1
 
 [node name="MainMenuButton" type="Button" parent="ButtonsRow"]

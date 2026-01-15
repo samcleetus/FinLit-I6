@@ -404,6 +404,8 @@ func end_match() -> void:
 	if _month_progress:
 		_month_progress.value = 0
 	if _end_match_overlay:
+		if _end_match_overlay.has_method("render_summary"):
+			_end_match_overlay.call("render_summary")
 		_end_match_overlay.visible = true
 	else:
 		push_error("Match: EndMatchOverlay node missing; cannot display overlay.")

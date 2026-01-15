@@ -1,7 +1,9 @@
-[gd_scene load_steps=5 format=3 uid="uid://bpgcr756l6cp8"]
+[gd_scene load_steps=7 format=3 uid="uid://bpgcr756l6cp8"]
 
-[ext_resource type="Texture2D" uid="uid://ce4no7knnx21o" path="res://Assets/Images/icon.svg" id="1_r4ip7"]
 [ext_resource type="FontFile" uid="uid://cir48cl3fhleo" path="res://Assets/Fonts/montserrat.bold.ttf" id="1_xhaxc"]
+[ext_resource type="FontFile" uid="uid://ep3h7ef2uyq" path="res://Assets/Fonts/montserrat.medium.ttf" id="2_bcx8h"]
+[ext_resource type="Script" path="res://Scripts/UI/EndMatchOverlay.gd" id="3_3qa7c"]
+[ext_resource type="Texture2D" uid="uid://7b2f68ohp78l" path="res://Assets/Images/UI/AnotherButton.png" id="4_fmvng"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_llbyk"]
 bg_color = Color(0.203922, 0.258824, 0.345098, 1)
@@ -15,6 +17,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_3qa7c")
 
 [node name="Dimmer" type="ColorRect" parent="."]
 layout_mode = 1
@@ -40,7 +43,7 @@ alignment = 1
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_xhaxc")
 theme_override_font_sizes/font_size = 100
-text = "Match Complete!"
+text = "Year Complete!"
 horizontal_alignment = 1
 
 [node name="Card" type="PanelContainer" parent="."]
@@ -60,45 +63,59 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_llbyk")
 
 [node name="StatsVBox" type="VBoxContainer" parent="Card"]
 layout_mode = 2
-size_flags_horizontal = 4
 theme_override_constants/separation = 50
 alignment = 1
 
-[node name="StatRow1" type="HBoxContainer" parent="Card/StatsVBox"]
+[node name="StatRow1" type="HFlowContainer" parent="Card/StatsVBox"]
 layout_mode = 2
-theme_override_constants/separation = 50
+theme_override_constants/h_separation = 50
 alignment = 1
 
 [node name="NameLabel" type="Label" parent="Card/StatsVBox/StatRow1"]
 layout_mode = 2
-size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("1_xhaxc")
 theme_override_font_sizes/font_size = 60
-text = "Stat 1:"
+text = "Net Gain/Loss"
 
-[node name="StatRow2" type="HBoxContainer" parent="Card/StatsVBox"]
+[node name="ValueLabel" type="Label" parent="Card/StatsVBox/StatRow1"]
 layout_mode = 2
-theme_override_constants/separation = 50
+theme_override_fonts/font = ExtResource("2_bcx8h")
+theme_override_font_sizes/font_size = 50
+text = "$0"
+
+[node name="StatRow2" type="HFlowContainer" parent="Card/StatsVBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 50
 alignment = 1
 
 [node name="NameLabel" type="Label" parent="Card/StatsVBox/StatRow2"]
 layout_mode = 2
-size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("1_xhaxc")
 theme_override_font_sizes/font_size = 60
-text = "Stat 2:"
+text = "Best Asset"
 
-[node name="StatRow3" type="HBoxContainer" parent="Card/StatsVBox"]
+[node name="ValueLabel" type="Label" parent="Card/StatsVBox/StatRow2"]
 layout_mode = 2
-theme_override_constants/separation = 50
+theme_override_fonts/font = ExtResource("2_bcx8h")
+theme_override_font_sizes/font_size = 50
+text = "None"
+
+[node name="StatRow3" type="HFlowContainer" parent="Card/StatsVBox"]
+layout_mode = 2
+theme_override_constants/h_separation = 50
 alignment = 1
 
 [node name="NameLabel" type="Label" parent="Card/StatsVBox/StatRow3"]
 layout_mode = 2
-size_flags_horizontal = 3
 theme_override_fonts/font = ExtResource("1_xhaxc")
 theme_override_font_sizes/font_size = 60
-text = "Stat 3:"
+text = "Worst Asset"
+
+[node name="ValueLabel" type="Label" parent="Card/StatsVBox/StatRow3"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_bcx8h")
+theme_override_font_sizes/font_size = 50
+text = "None"
 
 [node name="ButtonsRow" type="HBoxContainer" parent="Card/StatsVBox"]
 layout_mode = 2
@@ -108,11 +125,49 @@ alignment = 1
 [node name="MainMenuButton" type="Button" parent="Card/StatsVBox/ButtonsRow"]
 layout_mode = 2
 theme_override_styles/focus = SubResource("StyleBoxEmpty_v4x1d")
-icon = ExtResource("1_r4ip7")
+icon = ExtResource("4_fmvng")
 flat = true
 
-[node name="NexYearButton" type="Button" parent="Card/StatsVBox/ButtonsRow"]
+[node name="ButtonLabel" type="Label" parent="Card/StatsVBox/ButtonsRow/MainMenuButton"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -44.0
+offset_top = -11.5
+offset_right = 44.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
+theme_override_fonts/font = ExtResource("1_xhaxc")
+theme_override_font_sizes/font_size = 35
+text = "Main Menu"
+horizontal_alignment = 1
+
+[node name="NextYearButton" type="Button" parent="Card/StatsVBox/ButtonsRow"]
 layout_mode = 2
 theme_override_styles/focus = SubResource("StyleBoxEmpty_v4x1d")
-icon = ExtResource("1_r4ip7")
+icon = ExtResource("4_fmvng")
 flat = true
+
+[node name="ButtonLabel" type="Label" parent="Card/StatsVBox/ButtonsRow/NextYearButton"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -44.0
+offset_top = -11.5
+offset_right = 44.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
+theme_override_fonts/font = ExtResource("1_xhaxc")
+theme_override_font_sizes/font_size = 35
+text = "Next Year"
+horizontal_alignment = 1

@@ -1,7 +1,7 @@
 [gd_scene load_steps=10 format=3 uid="uid://bd1avrq7ogqn7"]
 
 [ext_resource type="Script" path="res://Scripts/UI/StartRun.gd" id="1_f6pcr"]
-[ext_resource type="Texture2D" uid="uid://bkufwj8ahoe4w" path="res://Assets/Images/UI/background.png" id="2_hmyfe"]
+[ext_resource type="Texture2D" uid="uid://bchdv8l5tdfqb" path="res://Assets/Images/UI/Background2.png" id="2_7dwdb"]
 [ext_resource type="PackedScene" uid="uid://bhmdobeuhceae" path="res://Scenes/UI/AssetCard.tscn" id="3_gwf7r"]
 [ext_resource type="Texture2D" uid="uid://bycg0gm060oac" path="res://Assets/Images/UI/BackButton.png" id="3_p1ykm"]
 [ext_resource type="FontFile" uid="uid://cir48cl3fhleo" path="res://Assets/Fonts/montserrat.bold.ttf" id="4_i4gfu"]
@@ -29,7 +29,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-texture = ExtResource("2_hmyfe")
+texture = ExtResource("2_7dwdb")
 
 [node name="TitleVBox" type="VBoxContainer" parent="."]
 layout_mode = 1

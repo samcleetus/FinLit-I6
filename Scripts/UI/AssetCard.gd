@@ -5,6 +5,7 @@ signal pressed(asset_id: String)
 
 var asset_id: String = ""
 var selected: bool = false
+var locked: bool = false
 var _hit_button: Button
 var _name_label: Label
 var _image: TextureRect
@@ -19,6 +20,7 @@ var _outline_margin: float = 4.0
 var _name_font_size_default: int = 25
 var _locked_overlay: TextureRect
 var _outline_refresh_pending: bool = false
+const AssetDBPath := "res://Resources/AssetDB.tres"
 
 
 func _ready() -> void:
@@ -35,8 +37,10 @@ func _notification(what: int) -> void:
 		_schedule_outline_refresh()
 
 
-func apply_asset(asset: Asset) -> void:
+func apply_asset(asset: Variant) -> void:
 	_ensure_nodes()
+	if typeof(asset) == TYPE_STRING:
+		asset = _load_asset_by_id(str(asset))
 	if asset == null:
 		clear_asset()
 		return
@@ -68,7 +72,7 @@ func clear_asset() -> void:
 
 func set_selected(is_selected: bool) -> void:
 	selected = is_selected
-	self.modulate = Color(1, 1, 1, 1) if is_selected else Color(1, 1, 1, 0.9)
+	_update_modulate()
 	if _outline_enabled:
 		_schedule_outline_refresh()
 
@@ -100,8 +104,10 @@ func set_icon_scale(scale_factor: float) -> void:
 
 func set_locked(is_locked: bool) -> void:
 	_ensure_nodes()
+	locked = is_locked
 	if _locked_overlay:
 		_locked_overlay.visible = is_locked
+	_update_modulate()
 
 
 func _on_pressed() -> void:
@@ -170,3 +176,21 @@ func _get_outline_rect() -> Rect2:
 	fallback.position += Vector2.ONE * (_outline_thickness * 0.5)
 	fallback.size -= Vector2.ONE * _outline_thickness
 	return fallback
+
+
+func _update_modulate() -> void:
+	if locked:
+		self.modulate = Color(1, 1, 1, 0.6)
+	elif selected:
+		self.modulate = Color(1, 1, 1, 1)
+	else:
+		self.modulate = Color(1, 1, 1, 0.9)
+
+
+func _load_asset_by_id(id: String) -> Variant:
+	if id == "":
+		return null
+	var db := load(AssetDBPath)
+	if db == null or not db.has_method("get_by_id"):
+		return null
+	return db.get_by_id(id)

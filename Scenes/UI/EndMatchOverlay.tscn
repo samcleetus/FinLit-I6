@@ -143,7 +143,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
 theme_override_fonts/font = ExtResource("1_xhaxc")
-theme_override_font_sizes/font_size = 35
+theme_override_font_sizes/font_size = 38
 text = "Main Menu"
 horizontal_alignment = 1
 
@@ -168,6 +168,6 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_colors/font_color = Color(0.203922, 0.258824, 0.345098, 1)
 theme_override_fonts/font = ExtResource("1_xhaxc")
-theme_override_font_sizes/font_size = 35
+theme_override_font_sizes/font_size = 38
 text = "Next Year"
 horizontal_alignment = 1

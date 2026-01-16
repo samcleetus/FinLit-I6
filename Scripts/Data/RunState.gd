@@ -21,6 +21,8 @@ class_name RunState
 @export var year_start_total_cents: int = 0
 @export var year_start_asset_cents: Dictionary = {}
 @export var last_year_summary: Dictionary = {}
+@export var year_net_gains_cents: Array[int] = [] as Array[int]
+@export var year_net_cents: Array[int] = [] as Array[int]
 
 
 func reset_history() -> void:

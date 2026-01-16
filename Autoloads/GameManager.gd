@@ -102,6 +102,8 @@ func start_new_run(chosen_asset_ids: Array[String]) -> bool:
 	state.portfolio_cents_by_asset_id = {}
 	state.year_start_asset_cents = {}
 	state.last_year_summary = {}
+	state.year_net_gains_cents = [] as Array[int]
+	state.year_net_cents = [] as Array[int]
 	_ensure_portfolio_initialized(state)
 	_reset_unallocated_for_new_year(state)
 	state.total_value = _compute_total_value(state)
@@ -168,6 +170,19 @@ func get_run_state() -> Object:
 		_ensure_hand_initialized(run_state)
 		_ensure_portfolio_initialized(run_state)
 	return run_state
+
+
+func get_year_net_gains_cents() -> Array[int]:
+	var state := run_state as RunState
+	if state == null:
+		return []
+	_ensure_state_currency_in_cents(state)
+	var result: Array[int] = _copy_int_array(state.year_net_gains_cents)
+	return result
+
+
+func get_year_net_cents() -> Array[int]:
+	return get_year_net_gains_cents()
 
 
 func get_unallocated_funds_cents() -> int:
@@ -687,6 +702,7 @@ func _ensure_state_currency_in_cents(state: RunState) -> void:
 		state.year_start_asset_cents = {}
 	if state.last_year_summary == null or typeof(state.last_year_summary) != TYPE_DICTIONARY:
 		state.last_year_summary = {}
+	_normalize_year_net_results(state)
 	if state.currency_in_cents:
 		_backfill_portfolio_from_allocations(state)
 		return
@@ -834,6 +850,33 @@ func _packed_ints_to_array(values: PackedInt32Array) -> Array[int]:
 	for value in values:
 		result.append(int(value))
 	return result
+
+
+func _copy_int_array(values: Variant) -> Array[int]:
+	var result: Array[int] = [] as Array[int]
+	if values == null:
+		return result
+	for value in values:
+		result.append(int(value))
+	return result
+
+
+func _normalize_year_net_results(state: RunState) -> void:
+	if state == null:
+		return
+	var candidates: Array = [] as Array
+	if "year_net_gains_cents" in state and state.year_net_gains_cents != null and typeof(state.year_net_gains_cents) == TYPE_ARRAY:
+		candidates.append(_copy_int_array(state.year_net_gains_cents))
+	if "year_net_cents" in state and state.year_net_cents != null and typeof(state.year_net_cents) == TYPE_ARRAY:
+		candidates.append(_copy_int_array(state.year_net_cents))
+	var chosen: Array[int] = []
+	for candidate in candidates:
+		if candidate.size() > chosen.size():
+			chosen = candidate
+	if chosen == null:
+		chosen = []
+	state.year_net_gains_cents = chosen.duplicate() as Array[int]
+	state.year_net_cents = chosen.duplicate() as Array[int]
 
 
 func _get_allocated_cents(state: RunState, asset_id: String) -> int:
@@ -1585,6 +1628,21 @@ func _record_indicator_exposure(indicator_ids: Array) -> void:
 	_persist_profile_stats()
 
 
+func _record_year_net_result(state: RunState, year_index: int, net_cents: int) -> void:
+	if state == null or year_index < 0:
+		return
+	_ensure_state_currency_in_cents(state)
+	var results: Array[int] = _copy_int_array(state.year_net_gains_cents)
+	if results.size() <= year_index:
+		var previous_size := results.size()
+		results.resize(year_index + 1)
+		for i in range(previous_size, results.size()):
+			results[i] = 0
+	results[year_index] = int(net_cents)
+	state.year_net_gains_cents = results.duplicate() as Array[int]
+	state.year_net_cents = results.duplicate() as Array[int]
+
+
 func _build_end_year_summary(state: RunState, start_total: int, end_total: int) -> Dictionary:
 	var start_assets: Dictionary = {}
 	if state.year_start_asset_cents != null and typeof(state.year_start_asset_cents) == TYPE_DICTIONARY:
@@ -1646,6 +1704,7 @@ func _maybe_record_year_result(state: RunState) -> void:
 	var delta := end_total - start_total
 	state.last_year_summary = _build_end_year_summary(state, start_total, end_total)
 	var summary: Dictionary = state.last_year_summary if state.last_year_summary != null else {}
+	_record_year_net_result(state, int(state.current_year_index), delta)
 	delta = int(summary.get("net_cents", delta))
 	print("GameManager: end-year summary -> net=%s best=%s (%s) worst=%s (%s)" % [
 		_format_currency(int(summary.get("net_cents", delta))),

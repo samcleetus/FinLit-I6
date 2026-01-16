@@ -111,16 +111,16 @@ grow_vertical = 2
 mouse_filter = 0
 horizontal_scroll_mode = 0
 
-[node name="YearCenterContainer" type="CenterContainer" parent="CenterContainer/Container/YearTrack"]
+[node name="YearTrackCanvas" type="Control" parent="CenterContainer/Container/YearTrack"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="YearGrid" type="GridContainer" parent="CenterContainer/Container/YearTrack/YearCenterContainer"]
-layout_mode = 2
-theme_override_constants/h_separation = 200
-theme_override_constants/v_separation = 200
-columns = 2
+[node name="YearPath" type="Path2D" parent="CenterContainer/Container/YearTrack/YearTrackCanvas"]
+
+[node name="PathLine" type="Line2D" parent="CenterContainer/Container/YearTrack/YearTrackCanvas"]
+width = 4.0
+default_color = Color(0.203922, 0.258824, 0.345098, 0.588235)
 
 [node name="PlayButton" type="Button" parent="CenterContainer"]
 custom_minimum_size = Vector2(0, 150)
